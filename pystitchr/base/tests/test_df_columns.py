@@ -5,7 +5,7 @@ stitchr_extensions tests
 import unittest
 from resources import data
 from pyspark.sql.functions import when, col
-from stitchr.base.df_columns import *
+from pystitchr.base.df_columns import *
 
 class TestColumnMethods(unittest.TestCase):
 

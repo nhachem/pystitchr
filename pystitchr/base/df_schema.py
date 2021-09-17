@@ -209,7 +209,7 @@ def schema_diff(left_df: DataFrame, right_df: DataFrame):
             )
 
 
-# to add to stitchr
+# to add to pystitchr
 def fields_diff(left_df: DataFrame, right_df: DataFrame):
     """
 

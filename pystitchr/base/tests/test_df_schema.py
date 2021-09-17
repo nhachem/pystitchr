@@ -5,9 +5,10 @@ stitchr_extensions tests
 import unittest
 from resources import data
 from pyspark.sql.functions import when
-from stitchr.base.df_columns import *
+from pystitchr.base.df_columns import *
 
-class TestCheckMethods(unittest.TestCase):
+
+class TestSchemaMethods(unittest.TestCase):
 
     """
     def test_get_valid_numeric(self):
@@ -20,7 +21,6 @@ class TestCheckMethods(unittest.TestCase):
         df_transformed.printSchema()
         self.assertEqual(cnt, 2)
     """
-
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ long_description = 'this is a package of pyspark dataframe transformations, ' \
                    'constraints checks and schema and column manipulations'
     
 setup(
-    name="stitchr",
+    name="pystitchr",
     version="0.1",
     description='Stitchr Python API',
     long_description=long_description,# long_description,
@@ -19,8 +19,8 @@ setup(
     author_email='nabilihachem@gmail.com',
     url='https://github.com/nhachem/stitchr-python/tree/master',
     # packages=find_packages(),
-    packages=['stitchr',
-                  'stitchr.base'
+    packages=['pystitchr',
+              'pystitchr.base'
               ],
     include_package_data=True,
     # package_dir={

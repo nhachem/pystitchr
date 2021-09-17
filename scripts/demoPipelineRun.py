@@ -1,5 +1,5 @@
 """
-On single-node emr after setting wheel and installing stitchr
+On single-node emr after setting wheel and installing pystitchr
 
 pyspark
 import pipelineRuns
@@ -14,7 +14,7 @@ demo pipeline runs for transformations
 from pyspark.sql import *
 import sys
 import json
-import stitchr.base.df_transforms as dft
+import pystitchr.base.df_transforms as dft
 
 spark = SparkSession.builder.getOrCreate()
 spark.sparkContext.setLogLevel('WARN')

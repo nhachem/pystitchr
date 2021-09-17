@@ -4,7 +4,7 @@ stitchr_extensions tests
 """
 import unittest
 from resources import data
-from stitchr.base.df_transforms import *
+from pystitchr.base.df_transforms import *
 import os
 
 

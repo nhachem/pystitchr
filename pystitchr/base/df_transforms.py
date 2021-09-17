@@ -173,7 +173,7 @@ def schema_diff(left_df: DataFrame, right_df: DataFrame):
             )
 
 
-# to add to stitchr
+# to add to pystitchr
 def fields_diff(left_df: DataFrame, right_df: DataFrame):
     l_set = set(left_df.schema.fieldNames())
     r_set = set(right_df.schema.fieldNames())
@@ -675,7 +675,7 @@ def add_columns_lookup(df: DataFrame, mapping_dict: dict):
 # class DfExtensions(DataFrame):
 class DfExtensions:
     """
-    set of transforms that invoke stitchr extensions
+    set of transforms that invoke pystitchr extensions
     wrapper around the scala implementation and interfaces
     """
 
@@ -739,10 +739,10 @@ class DfExtensions:
         Takes a dictionary of columns to be renamed and returns a converted dataframe
         Uses the thin wrapper around spark scala with Py4J
         """
-        # return DfExtensions(self.sql_ctx._jvm.com.stitchr.extensions.transform.Dataframe.renameColumns(
+        # return DfExtensions(self.sql_ctx._jvm.com.pystitchr.extensions.transform.Dataframe.renameColumns(
         #    _dict_to_scala_map(self._sc, rename_mapping_dict)), self._jdf, self.sql_ctx)
-        # return self.sql_ctx._jvm.com.stitchr.extensions.transform.Dataframe.renameColumns(_dict_to_scala_map(self._sc, rename_mapping_dict), self._jdf)
-        # return DfExtensions(self.sql_ctx._jvm.com.stitchr.extensions.transform.Dataframe.renameColumns(_dict_to_scala_map(self._sc, rename_mapping_dict)), self.sql_ctx)
+        # return self.sql_ctx._jvm.com.pystitchr.extensions.transform.Dataframe.renameColumns(_dict_to_scala_map(self._sc, rename_mapping_dict), self._jdf)
+        # return DfExtensions(self.sql_ctx._jvm.com.pystitchr.extensions.transform.Dataframe.renameColumns(_dict_to_scala_map(self._sc, rename_mapping_dict)), self.sql_ctx)
         return DfExtensions(self._sc._jvm.com.stitchr.extensions.transform.Df.renameColumns(
             _dict_to_scala_map(self._sc, rename_mapping_dict))(self._jdf), self._sc)
 
@@ -778,8 +778,8 @@ def transform0(self, f):
     return f(self)
 
 
-import stitchr.base.df_transforms as dft
-import stitchr.base.df_functions as fn
+import pystitchr.base.df_transforms as dft
+import pystitchr.base.df_functions as fn
 
 
 def run_pipeline(input_df: DataFrame, pipeline: str)-> DataFrame:

@@ -1,4 +1,4 @@
- # (Data)Stitchr (Python Version) (WIP)#
+ # PyStitchr: (Data)Stitchr (Python Version)
 
 ## What is (Data)Stitchr? ###
 
@@ -8,12 +8,15 @@ It can be deployed at any place in the pipeline to help in the data loading, tra
 The objective is to develop an open, extensible  and "simple-to-use" tool for data engineers.
 The original tol is scala-based and is found at [(Data)Stitchr](https://github.com/nhachem/stitchr)
 
-We initiated a new version that would be pure python/pyspark based and started with basic pipeline processing capabilities on single datasets. The objective is to develop a library wrapping pyspark's capabilities and API and use this library to enable simple as well as elaborate single dataset transformations. 
+We initiated a new version PyStitchr that is intended to be pure python/pyspark based and started with basic pipeline processing capabilities on single datasets. The objective is to develop a library wrapping pyspark's capabilities and API and use this library to enable simple as well as elaborate single dataset transformations. 
 In subsequent phases we would extend and port the full scala-based Stitchr functionality to Python/pyspark.
 
-Stitchr is built as an application based and using [Apache Spark](https://spark.apache.org/ "Spark").
+Stitchr (and PyStitchr) is built as an application based and using [Apache Spark](https://spark.apache.org/ "Spark").
 
 ## What Features do we currently support
+You can build the basic docs by running `./bash/gen_docs.sh` from the top directory. 
+
+A copy is generated for now and kept under the `html` directory
 see docs under the html directory
 
 ## How to setup and demo the tool? ###
@@ -48,6 +51,7 @@ see docs under the html directory
 * How to run the demo
 
 ```
+source bash/pystitchr_env.sh
 cd scripts
 python demoPipelineRun.py
 or 

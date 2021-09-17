@@ -1,7 +1,7 @@
 """
 pyspark
 
-from stitchr.base.df_checks import *
+from pystitchr.base.df_checks import *
 
 """
 
