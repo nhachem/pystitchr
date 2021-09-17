@@ -487,40 +487,28 @@ def get_random_string(length: int) -> str:
     return result_str
 
 
-def add_columns_table(table_name: str, new_columns_mapping_dict: dict) -> DataFrame:
-    """
-    This takes a dict of (new_column: str -> sql_expr: str)
-    the approach would be the most efficient as the transform expressions may be quite complex.
-    The implication is that UDFs are registered
-    :param table_name:
-    :param new_columns_mapping_dict: maps of {new_column: str -> sql_expr: str }
-    :return:
-    """
-    # note that the table stays with the session and disappears afterwards i we make it a Temp view
-    step = new_columns_mapping_dict
-    sql_expr = ', '.join([f"{step[c]} as `{c}`" for c in step])
-    return spark.sql(f'select *, {sql_expr} from {table_name}')
-
-
 def add_columns(df: DataFrame, new_columns_mapping_dict: dict) -> DataFrame:
     """
     This takes a dict of (new_column: str -> sql_expr: str)
+    NOTICE: the code uses a | delimiter to slit a string.
+    If a special function uses a delimiter then this function will fail
+    ToDo: NH. If the | is an issue, we may use a default delimiter of | but allow to pass different ones as needed
     the approach would be the most efficient as the transform expressions may be quite complex.
     The implication is that UDFs are registered
     :param df:
     :param new_columns_mapping_dict: maps of {new_column: str -> sql_expr: str }
     :return:
     """
-    # we can make the table_name a _tmp<randomstring> and drop it at the end...
-    # note that the table stays with the session and disappears afterwards i we make it a Temp view
-    df.createOrReplaceTempView("_tmp")
-
-    return add_columns_table("_tmp", new_columns_mapping_dict)
+    step = new_columns_mapping_dict
+    # we add `` around column names
+    sql_expr = '|'.join([f"{step[c]} as `{c}`" for c in step]).split('|')
+    # print(sql_expr)
+    return df.selectExpr("*", *sql_expr)
 
 
 def add_column(df: DataFrame, new_column: str, transform):
     """
-
+    NH: added here for coverage. But will be rarely used
     :param df:
     :param new_column:
     :param transform:
