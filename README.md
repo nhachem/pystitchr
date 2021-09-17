@@ -24,25 +24,25 @@ see docs under the html directory
 * Build
 
     First clone the repo
-    ``` git clone https://github.com/nhachem/stitchr-python.git``` under for example  `....repo/`. The ```STITCHR_ROOT``` is ```...repo/stitchr``` and  is the root of the code under stitchr. All environment variables for  stitchr are defined in ``` $STITCHR_ROOT/bash/stitchr_env.sh ```
+    ``` git clone https://github.com/nhachem/pystitchr.git``` under for example  `....repo/`. The ```STITCHR_ROOT``` is ```...repo/stitchr``` and  is the root of the code under stitchr. All environment variables for  stitchr are defined in ``` $STITCHR_ROOT/bash/stitchr_env.sh ```
 
     First time build
     ```
-    source bash/stitchr_env.sh
+    source bash/pystitchr_env.sh
    ```
     then run
     ```
     python setup.py bdist_wheel
     ```
     This step is needed once for a new build environment. You can then deploy the dist/*.whl, for example to install locally
-```python -m pip install dist/stitchr-0.1-py2.py3-none-any.whl```
+```python -m pip install dist/pystitchr-0.1-py2.py3-none-any.whl```
 
   and to uninstall
-```pip uninstall stitchr```
+```pip uninstall pystitchr```
   
 * Configuration
 
-    `source $STITCHR_ROOT/bash/stitchr_env.sh` 
+    `source $STITCHR_ROOT/bash/pystitchr_env.sh` 
   
 * Dependencies
    
