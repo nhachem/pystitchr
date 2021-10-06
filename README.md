@@ -6,7 +6,7 @@ DataStitchr or Stitchr is a tool that helps move and transform data along all ph
 It can be deployed at any place in the pipeline to help in the data loading, transformation and extraction process. 
 
 The objective is to develop an open, extensible  and "simple-to-use" tool for data engineers.
-The original tol is scala-based and is found at [(Data)Stitchr](https://github.com/nhachem/stitchr)
+The original tool is scala-based and is found at [(Data)Stitchr](https://github.com/nhachem/stitchr)
 
 We initiated a new version PyStitchr that is intended to be pure python/pyspark based and started with basic pipeline processing capabilities on single datasets. The objective is to develop a library wrapping pyspark's capabilities and API and use this library to enable simple as well as elaborate single dataset transformations. 
 In subsequent phases we would extend and port the full scala-based Stitchr functionality to Python/pyspark.
@@ -14,10 +14,7 @@ In subsequent phases we would extend and port the full scala-based Stitchr funct
 Stitchr (and PyStitchr) is built as an application based and using [Apache Spark](https://spark.apache.org/ "Spark").
 
 ## What Features do we currently support
-You can build the basic docs by running `./bash/gen_docs.sh` from the top directory. 
-
-A copy is generated for now and kept under the `html` directory
-see docs under the html directory
+You can build the basic docs by running `./bash/gen_docs.sh` from the top directory.
 
 ## How to setup and demo the tool? ###
 
@@ -46,7 +43,7 @@ see docs under the html directory
   
 * Dependencies
    
-        needs pyspark 3+. Although the system has been tested to work on Spark 2.2.3.
+        needs pyspark 3+. We are not testing for Spark 2, although we suspect it will run.
 
 * How to run the demo
 
@@ -67,10 +64,7 @@ python demoPipelineRunFromFile.py
 * Pending Features and Fixes
     
     * Porting from the scala code to python
-* General (WIP)
-    * Writing unit tests
-    * Code review
-    * Other guidelines?!
+    * adding logging and cleanup code to release 0.1
     
 ### Send requests/comments  to ###
     
