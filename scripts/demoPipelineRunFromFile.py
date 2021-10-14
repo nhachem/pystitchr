@@ -13,10 +13,14 @@ demo pipeline runs for transformations
 # from pyspark.sql import SparkSession
 from pyspark.sql import *
 import sys
-import json
+import time
+import logging
 import pystitchr.base.df_transforms as dft
 from pystitchr.util.utils import *
 spark = SparkSession.builder.getOrCreate()
+# use INFO to log correctly, DEBUG is cryptic...
+logging_level = logging.INFO
+# setting the spark level logging level
 spark.sparkContext.setLogLevel('WARN')
 
 print(sys.path)
@@ -32,7 +36,8 @@ json_df = spark.read.format("json").option("multiline", "true").load(f"../resour
 print(json_df.count())
 json_df.printSchema()
 
-test_df = spark.read.format("csv").option("header", True).option("inferSchema", True).load(f"{data_dir}/test_input_data.csv.gz").crossJoin(json_df)
+test_df = spark.read.format("csv").option("header", True).option("inferSchema", True) \
+    .load(f"{data_dir}/test_input_data.csv.gz").crossJoin(json_df)
 
 test_df.createOrReplaceTempView("_tmp")
 
@@ -45,34 +50,33 @@ test_df.printSchema()
 # rename_4_parquet_p is a wrapper with dummy params for rename_4_parquet... should be able to do better
 # same for flatten_p
 pipeline_spec0 = {1: {'add_columns': {'BARCODE': 'get_random_alphanumeric(8, ceil(f3*1000))',
-                     'WELL_NUMBER': 'ceil(f2*100)',
-                     'PLATE_ID': 'get_random_alphanumeric(8, ceil(f4*1000))',
-                     'EXPERIMENT_ID': 'get_random_alphanumeric(15, ceil(f6*1000))'
-                                     }
-                     },
-                 2: {"rename_columns": {"f1": "foo", "f2": "bar", 'f6': "not-a-parquet(),{name}"}},
-                 3: {'rename_4_parquet_p': []},
-                 4: {"drop_columns": ["f3", "f4", "f7", "f8", "f9"]},
-                 5: {"flatten_p": []},
-                 6: {"unpivot_p": [['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID', 'address__city', 'not__a__parquet________name__'], ["foo", "bar", "f5"]]},
-                 7: {"pivot_p": ["foo", "f5"]},
-                 8: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__', 'f5', 'foo']},
-                 9: {'select_exclude': ['f5']},
-                 10: {'filter_and': ['WELL_NUMBER >= 20', 'WELL_NUMBER <= 30']},
-                 # 11: {'filter_or': ['WELL_NUMBER in ( 20, 30)']},
-                 11: {'filter_or': ['WELL_NUMBER = 20', 'WELL_NUMBER = 30']},
-                 12: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__', 'foo']},
-                 }
+                                      'WELL_NUMBER': 'ceil(f2*100)',
+                                      'PLATE_ID': 'get_random_alphanumeric(8, ceil(f4*1000))',
+                                      'EXPERIMENT_ID': 'get_random_alphanumeric(15, ceil(f6*1000))'
+                                      }
+                      },
+                  2: {"rename_columns": {"f1": "foo", "f2": "bar", 'f6': "not-a-parquet(),{name}"}},
+                  3: {'rename_4_parquet_p': []},
+                  4: {"drop_columns": ["f3", "f4", "f7", "f8", "f9"]},
+                  5: {"flatten_p": []},
+                  6: {"unpivot_p": [['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID', 'address__city', 'not__a__parquet________name__'], ["foo", "bar", "f5"]]},
+                  7: {"pivot_p": ["foo", "f5"]},
+                  8: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__', 'f5', 'foo']},
+                  9: {'select_exclude': ['f5']},
+                  10: {'filter_and': ['WELL_NUMBER >= 20', 'WELL_NUMBER <= 30']},
+                  # 11: {'filter_or': ['WELL_NUMBER in ( 20, 30)']},
+                  11: {'filter_or': ['WELL_NUMBER = 20', 'WELL_NUMBER = 30']},
+                  12: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__', 'foo']},
+                  }
 
 df1 = test_df
 
-df_out = dft.run_pipeline(df1, pipeline_spec)
-df_out.printSchema()
+df_out = dft.run_pipeline(df1, pipeline_spec, logging_level)
+# this would default to ERROR which means nio logging
+# df_out = dft.run_pipeline(df1, pipeline_spec)
 # df_out.show(20, False)
 
-import time
 t_start = time.perf_counter()
 df_out.write.format('csv').option('header', True).mode('overwrite').save(f"{data_dir}/testPipeline.csv")
 print(f"runtime is {round(time.perf_counter() - t_start, 2)}")
-# print(json_df.count())
-# json_df.printSchema()
+

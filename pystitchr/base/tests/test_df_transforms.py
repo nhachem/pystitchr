@@ -8,7 +8,7 @@ from pystitchr.base.df_transforms import *
 import os
 
 
-class TestWrangleMethods(unittest.TestCase):
+class TestTranformMethods(unittest.TestCase):
 
     def test_left_diff_schemas(self):
         left_df: DataFrame = data.test_df

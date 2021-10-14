@@ -9,21 +9,26 @@ from stitchr_extensions.df_transforms import *
 # from pyspark.sql.functions import concat_ws, collect_list
 # import typing
 
-import pyspark
-from pyspark import rdd
-from pyspark.sql.types import *
-from pyspark.sql.functions import col, concat, lit, when
-from pyspark.sql.dataframe import DataFrame
-import pyspark.sql.functions as F
-from pyspark.sql.functions import expr
-# import typing_extensions
-
+import re
 # import sys
 from random import choice
 from string import ascii_letters
-import re
-
 from typing import List
+
+import pyspark
+import pyspark.sql.functions as F
+from pyspark.sql.dataframe import DataFrame
+from pyspark.sql.functions import col, concat, lit, when
+from pyspark.sql.types import *
+
+import pystitchr.base.df_transforms as dft
+import pystitchr.base.df_functions as fn
+import logging
+
+# from pystitchr.util.log4j4y import log
+from pystitchr.util.simple_logging import log
+
+# import typing_extensions
 
 spark = (pyspark.sql.SparkSession.builder.getOrCreate())
 spark.sparkContext.setLogLevel('WARN')
@@ -519,10 +524,10 @@ def add_column(df: DataFrame, new_column: str, transform):
     return df.withColumn(new_column, transform)
 
 
-def genPivotSQL(df: DataFrame, pivoted_columns_list: list = [None]
-                , key_column: str = 'key_column'
-                , value_column: str = 'value'
-                , fn: str = "max") -> str:
+def gen_pivot_sql(df: DataFrame, pivoted_columns_list: list = [None]
+                  , key_column: str = 'key_column'
+                  , value_column: str = 'value'
+                  , fn: str = "max") -> str:
     pivot_columns = []
     if len(pivoted_columns_list) != 0:
         pivot_columns = pivoted_columns_list
@@ -546,12 +551,12 @@ def pivot(df: DataFrame, pivoted_columns_list: list = [None]
           , key_column: str = 'key_column'
           , value_column: str = 'value'
           , fn: str = "max") -> DataFrame:
-    q = genPivotSQL(df, pivoted_columns_list, key_column, value_column, fn)
+    q = gen_pivot_sql(df, pivoted_columns_list, key_column, value_column, fn)
     return spark.sql(q)
 
 
 def pivot_p(df: DataFrame, pivoted_columns_list: list = [None]) -> DataFrame:
-    q = genPivotSQL(df, pivoted_columns_list)
+    q = gen_pivot_sql(df, pivoted_columns_list)
     return spark.sql(q)
 
 
@@ -766,23 +771,26 @@ def transform0(self, f):
     return f(self)
 
 
-import pystitchr.base.df_transforms as dft
-import pystitchr.base.df_functions as fn
-
-
-def run_pipeline(input_df: DataFrame, pipeline: str)-> DataFrame:
+def run_pipeline(input_df: DataFrame, pipeline: dict, logging_level: str = 'ERROR') -> DataFrame:
+    # ToDo: control logging level globally from outside
+    logging.basicConfig(level=logging_level)
     # don't want to modify the source so we assign it
     df_p = input_df
     steps = pipeline
-    print(f"number of steps is {len(steps)}")
+    log.info(f"number of steps is {len(steps)}")
     for step in steps:
-        print(steps[step])
+        log.info(steps[step])
         key = list(steps[step].keys())[0]
         params = steps[step][key]
-        print(f"step is {step}, transform is {key} with attributes {params}")
+        log.info(f"step is {step}, transform is {key} with attributes {params}")
         method_to_call = getattr(dft, key)
         df_p = df_p.transform(lambda df: method_to_call(df, params))
-        df_p.show()
+        # change to log if we want info
+        # print(f"root level logging is {log.root.level}")
+        # TODO: NH need to debug as this goes through log4j and is kind of messy
+        # if logging.DEBUG >= log.root.level:
+        # logs even if we use warn or higher so commented out
+        # log.info(df_p.printSchema())
     return df_p
 
 
@@ -791,20 +799,13 @@ def _test():
     test code
     :return:
     """
-    import os
-    from pyspark.sql import SparkSession
-    import pyspark.sql.catalog
-
-    os.chdir(os.environ["SPARK_HOME"])
-
-    globs = pyspark.sql.catalog.__dict__.copy()
-    spark = SparkSession.builder \
-        .master("local[4]") \
-        .appName("sql.catalog tests") \
-        .getOrCreate()
-    globs['sc'] = spark.sparkContext
-    globs['spark'] = spark
+    #import pystitchr.base.tests.test_df_transforms
+    #import pystitchr.base.df_transforms
+    import unittest
     # ...
+    #t = pystitchr.base.tests.test_df_transforms.TestTranformMethods()
+    # ToDo need to work on this
+    # t.test_right_diff_schemas()
 
 
 DataFrame.transform0 = transform0
