@@ -11,7 +11,7 @@ long_description = 'this is a package of pyspark dataframe transformations, ' \
     
 setup(
     name="pystitchr",
-    version="0.1",
+    version="0.2.snapshot",
     description='Stitchr Python API',
     long_description=long_description,# long_description,
     long_description_content_type="text/markdown",
@@ -20,7 +20,8 @@ setup(
     url='https://github.com/nhachem/stitchr-python/tree/master',
     packages=find_packages(),
     # packages=['pystitchr',
-    #           'pystitchr.base'
+    #          'pystitchr.base',
+    #          'pystitchr.util'
     #          ],
     include_package_data=True,
     # package_dir={

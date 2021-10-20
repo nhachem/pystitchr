@@ -233,22 +233,27 @@ def drop_columns(drop_columns_list: list, df: DataFrame) -> DataFrame:
 
 def rename_columns(df: DataFrame, rename_mapping_dict: dict) -> DataFrame:
     """
-    Caveat: NH: need to fix. The outcome changes the type to string
     :param df:
     :param rename_mapping_dict:
     :return: DataFrame
     Takes a dictionary of columns to be renamed and returns a converted dataframe
     """
-    # we use iteration over the dict and call df.WithColumn
-    # this is not efficient?
     df_columns: list = df.schema.fieldNames()
-    df_new_columns: list = [rename_mapping_dict[c] if (c in rename_mapping_dict)
-                            else c
+    # check if any column to be renamed is non existent
+    rename_columns_set = set(rename_mapping_dict.keys())
+    schema_columns_set = set(df_columns)
+    not_in_schema = list(rename_columns_set - schema_columns_set)
+    # maybe better to change to a try except or better setup app error trapping
+    if len(not_in_schema):
+        log.error(f"columns to rename {not_in_schema} are not in the dataframe schema")
+        exit(1)
+    # we use sqlExpr to keep the schema during the rename process
+    df_new_columns: list = [f"`{c}` as `{rename_mapping_dict[c]}`" if (c in rename_mapping_dict)
+                            else f"`{c}`"
                             for c in df_columns]
-    # df_new_columns: list = [f"`{rename_mapping_dict[c]}`" if (c in rename_mapping_dict)
-    #                         else c
-    #                         for c in df_columns]
-    return df.toDF(*df_new_columns)
+    # NH: this does not guarantee that we keep the schema types.
+    # return df.toDF(*df_new_columns) so we generated a select expression
+    return df.selectExpr(*df_new_columns)
 
 
 # def rename_column(existing: str, new: str, df: DataFrame) -> DataFrame:
