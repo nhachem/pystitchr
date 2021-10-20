@@ -18,10 +18,11 @@ setup(
     author='Nabil Hachem',
     author_email='nabilihachem@gmail.com',
     url='https://github.com/nhachem/stitchr-python/tree/master',
-    # packages=find_packages(),
-    packages=['pystitchr',
-              'pystitchr.base'
-              ],
+    packages=find_packages(),
+    # packages=['pystitchr',
+    #          'pystitchr.base',
+    #          'pystitchr.util'
+    #          ],
     include_package_data=True,
     # package_dir={
     #    'stitchr_extensions.jars': 'deps/jars',
