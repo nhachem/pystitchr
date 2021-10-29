@@ -11,8 +11,8 @@ from pyspark.sql import SparkSession
 
 # NH: want to control from the calling code
 # logging.basicConfig(level=logging.WARN)
-log = logging.getLogger(__name__)
-
+# log = logging.getLogger(__name__)
+log = logging.getLogger("logging")
 
 def main():
     logging.basicConfig(filename='myapp.log', level=logging.INFO)

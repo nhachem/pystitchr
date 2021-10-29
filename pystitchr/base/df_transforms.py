@@ -231,20 +231,16 @@ def drop_columns(drop_columns_list: list, df: DataFrame) -> DataFrame:
 """
 
 
-def rename_columns(df: DataFrame, rename_mapping_dict: dict) -> DataFrame:
-    """
-    :param df:
-    :param rename_mapping_dict:
-    :return: DataFrame
-    Takes a dictionary of columns to be renamed and returns a converted dataframe
-    """
+def rename_columns(df: DataFrame, rename_mapping_dict: dict, strict: bool = True) -> DataFrame:
+    # Takes a dictionary of columns to be renamed and returns a converted dataframe
+
     df_columns: list = df.schema.fieldNames()
     # check if any column to be renamed is non existent
     rename_columns_set = set(rename_mapping_dict.keys())
     schema_columns_set = set(df_columns)
     not_in_schema = list(rename_columns_set - schema_columns_set)
     # maybe better to change to a try except or better setup app error trapping
-    if len(not_in_schema):
+    if len(not_in_schema) > 0 and strict:
         log.error(f"columns to rename {not_in_schema} are not in the dataframe schema")
         exit(1)
     # we use sqlExpr to keep the schema during the rename process
@@ -256,9 +252,9 @@ def rename_columns(df: DataFrame, rename_mapping_dict: dict) -> DataFrame:
     return df.selectExpr(*df_new_columns)
 
 
-# def rename_column(existing: str, new: str, df: DataFrame) -> DataFrame:
 def rename_column(df: DataFrame, existing: str, new: str) -> DataFrame:
-    """Returns a new :class:`DataFrame` by renaming an existing column.
+    """
+    Returns a new :class:`DataFrame` by renaming an existing column.
     This is a no-op if schema doesn't contain the given column name.
     Effectively a wrapper over withColumnRenamed
 
@@ -271,6 +267,17 @@ def rename_column(df: DataFrame, existing: str, new: str) -> DataFrame:
     [Row(age2=2, name=u'Alice'), Row(age2=5, name=u'Bob')]
     """
     return df.withColumnRenamed(existing, new)
+
+
+def map_columns(df: DataFrame, rename_mapping_dict: dict) -> DataFrame:
+    """
+    This function renames all existing columns and skips the non-existing ones
+    :param df:
+    :param rename_mapping_dict:
+    :return: DataFrame
+    Takes a dictionary of columns to be renamed and returns a converted dataframe
+    """
+    return rename_columns(df, rename_mapping_dict, False)
 
 
 def rename_4_parquet(df: DataFrame) -> DataFrame:
