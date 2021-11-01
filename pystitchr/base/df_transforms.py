@@ -185,15 +185,48 @@ def fields_diff(left_df: DataFrame, right_df: DataFrame):
     return l_set.difference(r_set), r_set.difference(l_set)
 
 
-def select_list(df: DataFrame, column_list: list) -> DataFrame:
+def _select_list(df: DataFrame, column_list: list) -> DataFrame:
     """
 
     :param df:
     :param column_list:
     :return:
     """
+    not_in_schema = _not_in_schema(df, column_list)
+    # maybe better to change to a try except or better setup app error trapping
+    if len(not_in_schema) > 0:
+        log.error(f"columns to select {not_in_schema} are not in the dataframe schema")
+        exit(1)
     cl: list = f"`{'`,`'.join(column_list)}`".split(',')
     return df.select(*cl)
+
+
+def select_list(df: DataFrame, column_list: list, strict: bool = True) -> DataFrame:
+    """
+
+    :param df:
+    :param column_list:
+    :param strict:
+    :return:
+    """
+    not_in_schema = _not_in_schema(df, column_list)
+    # maybe better to change to a try except or better setup app error trapping
+    if len(not_in_schema) > 0 and strict:
+        log.error(f"columns to select {not_in_schema} are not in the dataframe schema")
+        exit(1)
+    in_schema = _in_schema(df, column_list)
+    cl: list = f"`{'`,`'.join(in_schema)}`".split(',')
+    return df.select(*cl)
+
+
+def select_list_from(df: DataFrame, column_list: list) -> DataFrame:
+    """
+
+    :param df:
+    :param column_list:
+    :return:
+    """
+    return select_list(df, column_list, False)
 
 
 def select_exclude(df: DataFrame, columns_2_exclude: list) -> DataFrame:
@@ -231,14 +264,34 @@ def drop_columns(drop_columns_list: list, df: DataFrame) -> DataFrame:
 """
 
 
-def rename_columns(df: DataFrame, rename_mapping_dict: dict, strict: bool = True) -> DataFrame:
-    # Takes a dictionary of columns to be renamed and returns a converted dataframe
+def _not_in_schema(df: DataFrame, column_list: list)-> list:
+    """
 
+    """
     df_columns: list = df.schema.fieldNames()
     # check if any column to be renamed is non existent
-    rename_columns_set = set(rename_mapping_dict.keys())
+    columns_set = set(column_list)
     schema_columns_set = set(df_columns)
-    not_in_schema = list(rename_columns_set - schema_columns_set)
+    return list(columns_set - schema_columns_set)
+
+
+def _in_schema(df: DataFrame, column_list: list)-> list:
+    """
+    returns the list in the same order
+
+    """
+    return [c for c in column_list if c in df.schema.fieldNames()]
+
+
+def rename_columns(df: DataFrame, rename_mapping_dict: dict, strict: bool = True) -> DataFrame:
+    """
+    Takes a dictionary of columns to be renamed and returns a converted dataframe
+    if strict then throws errors and exits if any column is not in the schema
+    else it renames all existing columns and skips the non existing ones
+    """
+    # Takes a dictionary of columns to be renamed and returns a converted dataframe
+
+    not_in_schema = _not_in_schema(df, rename_mapping_dict.keys())
     # maybe better to change to a try except or better setup app error trapping
     if len(not_in_schema) > 0 and strict:
         log.error(f"columns to rename {not_in_schema} are not in the dataframe schema")
@@ -246,9 +299,10 @@ def rename_columns(df: DataFrame, rename_mapping_dict: dict, strict: bool = True
     # we use sqlExpr to keep the schema during the rename process
     df_new_columns: list = [f"`{c}` as `{rename_mapping_dict[c]}`" if (c in rename_mapping_dict)
                             else f"`{c}`"
-                            for c in df_columns]
+                            for c in df.schema.fieldNames()]
     # NH: this does not guarantee that we keep the schema types.
-    # return df.toDF(*df_new_columns) so we generated a select expression
+    # return df.toDF(*df_new_columns)
+    # so we generated a select expression
     return df.selectExpr(*df_new_columns)
 
 
@@ -262,9 +316,6 @@ def rename_column(df: DataFrame, existing: str, new: str) -> DataFrame:
     :rtype: object
     :param existing: string, name of the existing column to rename.
     :param new: string, new name of the column.
-
-    >>> df.rename_column('age', 'age2').collect()
-    [Row(age2=2, name=u'Alice'), Row(age2=5, name=u'Bob')]
     """
     return df.withColumnRenamed(existing, new)
 
