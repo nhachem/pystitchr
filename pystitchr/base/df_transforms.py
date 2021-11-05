@@ -1,7 +1,7 @@
 """
 pyspark
 
-from stitchr_extensions.df_transforms import *
+from pystitchr.base.df_transforms import *
 
 """
 
@@ -195,7 +195,7 @@ def _select_list(df: DataFrame, column_list: list) -> DataFrame:
     not_in_schema = _not_in_schema(df, column_list)
     # maybe better to change to a try except or better setup app error trapping
     if len(not_in_schema) > 0:
-        log.error(f"columns to select {not_in_schema} are not in the dataframe schema")
+        log.error(f"App Error: columns to select {not_in_schema} are not in the dataframe schema")
         exit(1)
     cl: list = f"`{'`,`'.join(column_list)}`".split(',')
     return df.select(*cl)
@@ -212,7 +212,7 @@ def select_list(df: DataFrame, column_list: list, strict: bool = True) -> DataFr
     not_in_schema = _not_in_schema(df, column_list)
     # maybe better to change to a try except or better setup app error trapping
     if len(not_in_schema) > 0 and strict:
-        log.error(f"columns to select {not_in_schema} are not in the dataframe schema")
+        log.error(f"App Error: columns to select {not_in_schema} are not in the dataframe schema")
         exit(1)
     in_schema = _in_schema(df, column_list)
     cl: list = f"`{'`,`'.join(in_schema)}`".split(',')
@@ -221,6 +221,7 @@ def select_list(df: DataFrame, column_list: list, strict: bool = True) -> DataFr
 
 def select_list_from(df: DataFrame, column_list: list) -> DataFrame:
     """
+    permissive select_list
 
     :param df:
     :param column_list:
@@ -294,7 +295,7 @@ def rename_columns(df: DataFrame, rename_mapping_dict: dict, strict: bool = True
     not_in_schema = _not_in_schema(df, rename_mapping_dict.keys())
     # maybe better to change to a try except or better setup app error trapping
     if len(not_in_schema) > 0 and strict:
-        log.error(f"columns to rename {not_in_schema} are not in the dataframe schema")
+        log.error(f"App Error: columns to rename {not_in_schema} are not in the dataframe schema")
         exit(1)
     # we use sqlExpr to keep the schema during the rename process
     df_new_columns: list = [f"`{c}` as `{rename_mapping_dict[c]}`" if (c in rename_mapping_dict)
@@ -358,10 +359,10 @@ def rename_4_parquet_p(df: DataFrame, dummy_list: list = [None]) -> DataFrame:
     return rename_4_parquet(df)
 
 
-def unpivot(df: DataFrame, unpivot_keys: list,
-            unpivot_column_list: list,
-            key_column: str = "key_column",
-            value_column: str = "value") -> DataFrame:
+def _unpivot(df: DataFrame, unpivot_keys: list,
+             unpivot_column_list: list,
+             key_column: str = "key_column",
+             value_column: str = "value") -> DataFrame:
     """
 
     :param df:
@@ -383,12 +384,16 @@ def unpivot(df: DataFrame, unpivot_keys: list,
     return spark.sql(q)
 
 
-def unpivot_p(df: DataFrame, params: list) -> DataFrame:
+# test suite does not like _unpivot. This is strange....
+test_unpivot = _unpivot
+
+
+def unpivot(df: DataFrame, params: list) -> DataFrame:
     _keys = params[0]
     _unpivot_list = params[1]
     if len(_keys) == 0:
         _keys = list(set(df.schema.fieldNames()).difference(set(_unpivot_list)))
-    return unpivot(df, _keys, _unpivot_list)
+    return _unpivot(df, _keys, _unpivot_list)
 
 
 def flatten0(data_frame: DataFrame) -> DataFrame:
@@ -570,7 +575,7 @@ def get_random_string(length: int) -> str:
     return result_str
 
 
-def add_columns(df: DataFrame, new_columns_mapping_dict: dict) -> DataFrame:
+def _add_columns(df: DataFrame, new_columns_mapping_dict: dict, strict: bool = True) -> DataFrame:
     """
     This takes a dict of (new_column: str -> sql_expr: str)
     NOTICE: the code uses a | delimiter to slit a string.
@@ -582,11 +587,43 @@ def add_columns(df: DataFrame, new_columns_mapping_dict: dict) -> DataFrame:
     :param new_columns_mapping_dict: maps of {new_column: str -> sql_expr: str }
     :return:
     """
+    # ToDo: check also for all columns used in the functions?! This would not be trivial
+    df_out = df
     step = new_columns_mapping_dict
-    # we add `` around column names
-    sql_expr = '|'.join([f"{step[c]} as `{c}`" for c in step]).split('|')
-    # print(sql_expr)
-    return df.selectExpr("*", *sql_expr)
+    in_schema = _in_schema(df, new_columns_mapping_dict.keys())
+    not_in_schema = _not_in_schema(df, new_columns_mapping_dict.keys())
+    # maybe better to change to a try except or better setup app error trapping
+    if len(in_schema) > 0 and strict:
+        log.error(f"App Error: columns to add {in_schema} are already in the dataframe schema")
+        exit(1)
+    else:
+        if len(in_schema) > 0:
+            log.warn(f"App warning: columns to add {in_schema} will be skipped")
+
+        # if we get here we need to add only non-existing columns
+        # we also add `` around column names
+        _sql_expr = '|'.join([f"{step[c]} as `{c}`" if (c in not_in_schema) else 'NA' for c in step]).split('|')
+        sql_expr = list(filter(lambda l: l != 'NA', _sql_expr))
+        # if we have nothing to add then return the input dataframe
+        if len(sql_expr) > 0:
+            df_out = df.selectExpr("*", *sql_expr)
+        else:
+            log.warn(f"App warning: no new columns added")
+    return df_out
+
+
+def add_columns(df: DataFrame, new_columns_mapping_dict: dict) -> DataFrame:
+    """
+    We are assuming that adding columns filters out any columns that already exists
+    """
+    return _add_columns(df, new_columns_mapping_dict, False)
+
+
+def add_columns_strict(df: DataFrame, new_columns_mapping_dict: dict) -> DataFrame:
+    """
+    We are assuming that adding columns filters out any columns that already exists
+    """
+    return _add_columns(df, new_columns_mapping_dict, True)
 
 
 def add_column(df: DataFrame, new_column: str, transform):
@@ -625,17 +662,16 @@ def gen_pivot_sql(df: DataFrame, pivoted_columns_list: list = [None]
     return q
 
 
-def pivot(df: DataFrame, pivoted_columns_list: list = [None]
-          , key_column: str = 'key_column'
-          , value_column: str = 'value'
-          , fn: str = "max") -> DataFrame:
+def _pivot(df: DataFrame, pivoted_columns_list: list = [None]
+           , key_column: str = 'key_column'
+           , value_column: str = 'value'
+           , fn: str = "max") -> DataFrame:
     q = gen_pivot_sql(df, pivoted_columns_list, key_column, value_column, fn)
     return spark.sql(q)
 
 
-def pivot_p(df: DataFrame, pivoted_columns_list: list = [None]) -> DataFrame:
-    q = gen_pivot_sql(df, pivoted_columns_list)
-    return spark.sql(q)
+def pivot(df: DataFrame, pivoted_columns_list: list = [None]) -> DataFrame:
+    return _pivot(df, pivoted_columns_list)
 
 
 def filter_op(df: DataFrame, filter_expr_list: list = ["1=1"], operation: str = 'AND') -> DataFrame:

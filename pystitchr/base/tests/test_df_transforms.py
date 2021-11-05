@@ -1,5 +1,5 @@
 """
-stitchr_extensions tests
+pystitchr tests
 
 """
 import unittest
@@ -60,7 +60,7 @@ class TestTranformMethods(unittest.TestCase):
     def test_unpivot(self):
         data.simple_df.printSchema()
         # ["firstname", "middlename", "lastname", "id", "location", "salary"]
-        df_unpivot = unpivot(data.simple_df, ["firstname", "lastname"], ["id", "location", "salary"])
+        df_unpivot = test_unpivot(data.simple_df, ["firstname", "lastname"], ["id", "location", "salary"])
         # the following would be logging and we need to add asserts
         df_unpivot.printSchema()
         df_unpivot.show()
