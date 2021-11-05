@@ -482,7 +482,7 @@ def flatten_no_explode(data_frame: DataFrame) -> DataFrame:
     return data_frame
 
 
-def flatten(data_frame: DataFrame, mode: str = 'full', delimiter: str = '__') -> DataFrame:
+def _flatten(data_frame: DataFrame, mode: str = 'full', delimiter: str = '__') -> DataFrame:
     # cases are full means full explode.
     #           struct only structs,
     #           map will unwind the maps as a pivot and a group by + structs
@@ -500,7 +500,7 @@ def flatten(data_frame: DataFrame, mode: str = 'full', delimiter: str = '__') ->
                 f"explode_outer({field_name}) as {field_name}"]
             # exploded_df = exploded_df.selectExpr(*field_names_to_select)
             # return flatten0(exploded_df)
-            return flatten(data_frame.selectExpr(*field_names_to_select), mode, delimiter)
+            return _flatten(data_frame.selectExpr(*field_names_to_select), mode, delimiter)
         elif isinstance(field_type, MapType) and mode in ['map', 'full']:
             """
             This is quite expensive if we do not have a known enumeration of key. 
@@ -526,7 +526,7 @@ def flatten(data_frame: DataFrame, mode: str = 'full', delimiter: str = '__') ->
             # df_mapped.printSchema()
             df_flat: DataFrame = df_left.join(df_mapped, df_left.id == df_mapped.id_right, "inner") \
                 .drop("id").drop("id_right").drop(field_name)
-            return flatten(df_flat, mode, delimiter)
+            return _flatten(df_flat, mode, delimiter)
         elif isinstance(field_type, StructType):
             child_fieldnames = [f"{field_name}.{child.name}" for child in field_type]
             new_fieldnames = [fn for fn in field_names if fn != field_name] + child_fieldnames
@@ -534,13 +534,28 @@ def flatten(data_frame: DataFrame, mode: str = 'full', delimiter: str = '__') ->
             # exploded_df = exploded_df.select(*renamed_cols)
             # print(len(exploded_df.schema.fieldNames()))
             # return flatten0(exploded_df)
-            return flatten(data_frame.select(*renamed_cols), mode, delimiter)
+            return _flatten(data_frame.select(*renamed_cols), mode, delimiter)
     # print(f'schema size is {len(data_frame.schema.fieldNames())}')
     return data_frame
 
 
-def flatten_p(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
-    return flatten(df)
+def flatten(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
+    return _flatten(df)
+
+
+# NH flatten_array, flatten_struct, flatten_map are experimental
+
+
+def flatten_struct(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
+    return _flatten(df, mode='struct')
+
+
+def flatten_array(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
+    return flatten(df, mode='array')
+
+
+def flatten_map(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
+    return _flatten(df, mode='map')
 
 
 # need to make a function @property

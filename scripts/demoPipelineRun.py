@@ -52,7 +52,7 @@ pipeline_spec = {1: {'add_columns': {'BARCODE': 'get_random_alphanumeric(8, ceil
                  2: {"rename_columns": {"f1": "foo", "f2": "bar", 'f6': "not-a-parquet(),{name}"}},
                  3: {'rename_4_parquet_p': []},
                  4: {"drop_columns": ["f3", "f4", "f7", "f8", "f9"]},
-                 5: {"flatten_p": []},
+                 5: {"flatten": []},
                  6: {"unpivot_p": [['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID', 'address__city', 'not__a__parquet________name__'], ["foo", "bar", "f5"]]},
                  7: {"pivot_p": ["foo", "f5"]},
                  8: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__', 'f5', 'foo']},
