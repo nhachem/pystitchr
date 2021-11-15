@@ -15,7 +15,9 @@ from pyspark.sql import *
 import sys
 import time
 import logging
-import pystitchr.base.df_transforms as dft
+# this import is needed as we need to initialize pystitchr to include the dataframe extensions
+import pystitchr
+
 spark = SparkSession.builder.getOrCreate()
 # use INFO to log correctly, DEBUG is cryptic...
 logging_level = logging.INFO
@@ -41,8 +43,8 @@ test_df.printSchema()
 # The code can be extended to take the diff of attributes if none are provided but does not handle that case yet
 # note that the functions that may be added as UDFs are in df_functions
 # note: select exclude is like drop_columns but may run more efficiently
-# rename_4_parquet_p is a wrapper with dummy params for rename_4_parquet... should be able to do better
-# same for flatten_p
+# rename_4_parquet is a wrapper with dummy params for rename_4_parquet... should be able to do better
+
 pipeline_spec = {1: {'add_columns': {'BARCODE': 'get_random_alphanumeric(8, ceil(f3*1000))',
                                      'WELL_NUMBER': 'ceil(f2*100)',
                                      'PLATE_ID': 'get_random_alphanumeric(8, ceil(f4*1000))',
@@ -50,7 +52,7 @@ pipeline_spec = {1: {'add_columns': {'BARCODE': 'get_random_alphanumeric(8, ceil
                                      }
                      },
                  2: {"rename_columns": {"f1": "foo", "f2": "bar", 'f6': "not-a-parquet(),{name}"}},
-                 3: {'rename_4_parquet_p': []},
+                 3: {'rename_4_parquet': []},
                  4: {"drop_columns": ["f3", "f4", "f7", "f8", "f9"]},
                  5: {"flatten": []},
                  6: {"unpivot": [['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID', 'address__city', 'not__a__parquet________name__'], ["foo", "bar", "f5"]]},
@@ -64,7 +66,7 @@ pipeline_spec = {1: {'add_columns': {'BARCODE': 'get_random_alphanumeric(8, ceil
                  }
 
 df1 = test_df
-df_out = dft.run_pipeline(df1, pipeline_spec, logging_level)
+df_out = df1.run_pipeline(pipeline_spec, logging_level)
 # this would default to ERROR which means no logging
 # df_out = dft.run_pipeline(df1, pipeline_spec)
 df_out.printSchema()
