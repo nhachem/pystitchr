@@ -184,7 +184,7 @@ def check_numeric_bounds(df: DataFrame, column_name: str, low_value: float, high
     :param high_value:
     :return:
     """
-    # assumes we checked that the column is numeric allready
+    # assumes we checked that the column is numeric already
     df_bound = df.filter(col(column_name) < high_value).filter(col(column_name) > low_value)
     return df_bound, (df_bound.count()/df.count())*100
 
@@ -274,7 +274,7 @@ def check_column_nulls(df: DataFrame, column: str) -> (DataFrame, DataFrame):
     :param column:
     :return:
     """
-    # here checks individual column if it has nulls and returns all columns that are null
+    # here checks individual column if it has nulls and returns all rows that have a null for column
     return df, df.where(col(column).isNull())
 
 
@@ -300,8 +300,9 @@ def check_all_null(df: DataFrame, column_list: list) -> DataFrame:
     # here checks are on each individually and returns the list of columns (as a dataframe ?) that are actually nulls
     # if input list is null then all columns are checks. If except is true (default is false) then all columns except in the list are checked.
     # difficult to do across all columns... one needs to apply .isNull to each column and then collapse to verify
-    # NH: place holder
+    # ToDo NH: place holder
     # will use the check_column_null
+    print("ToDo: PLACE HOLDER, NOT IMPLEMENTED YET")
     return df #.where(col("dt_mvmt").isNull())
 
 
@@ -327,23 +328,20 @@ def domain_check(df: DataFrame, src_column_names_list: list,
 
 
 def unique_check(df,
-                 column_names_list: list,
-                 pass_through: bool = False) -> DataFrame:
+                 column_names_list: list
+                 ) -> DataFrame:
     """
     like a pk check
     :param df:
     :param column_names_list:
-    :param pass_through:
+    # :param pass_through:
     :return:
     """
     df_pk: DataFrame = df.select(*column_names_list)\
         .groupBy(*column_names_list)\
         .count().withColumnRenamed("count", "group_count")\
         .filter(col("group_count") > 1)
-    if pass_through:
-        return df_pk # need to use dynamic join to do it... we can write this in both python or scala
-    else:
-        return df_pk # return the problem records
+    return df_pk
 
 
 def _test():

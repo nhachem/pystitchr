@@ -4,7 +4,9 @@ pystitchr tests
 """
 import unittest
 from resources import data
-from pystitchr.base.df_transforms import *
+# NH: switched to monkey patched functions (through __init__ from pystitchr main module
+from pystitchr import *
+# from pystitchr.base.df_transforms import *
 import os
 
 
@@ -24,17 +26,19 @@ class TestTranformMethods(unittest.TestCase):
         self.assertEqual(right_diff, ["value"])
 
     def test_select_list(self):
-        df = select_list(data.test_df, ["K E   Y", " .value"])
+        # df = select_list(data.test_df, ["K E   Y", " .value"])
+        df = data.test_df.select_list(["K E   Y", " .value"])
         self.assertEqual(df.schema.fieldNames(), ["K E   Y", " .value"])
         self.assertEqual(df.count(), 3)
 
     def test_select_exclude(self):
-        df = select_exclude(data.test_df1, ["cols with   sp  aces", "value"])
+        # df = select_exclude(data.test_df1, ["cols with   sp  aces", "value"])
+        df = data.test_df1.select_exclude(["cols with   sp  aces", "value"])
         self.assertEqual(df.schema.fieldNames(), ["K E   Y"])
         self.assertEqual(df.count(), 3)
 
     def test_drop_columns(self):
-        df = drop_columns(data.test_df1, ["cols with   sp  aces", "value"])
+        df = data.test_df1.drop_columns(["cols with   sp  aces", "value"])
         self.assertEqual(df.schema.fieldNames(), ["K E   Y"])
         self.assertEqual(df.count(), 3)
 
@@ -43,7 +47,7 @@ class TestTranformMethods(unittest.TestCase):
                                "cols with   sp  aces": "col1",
                                " .value": "val"
                                }
-        df = rename_columns(data.test_df, rename_mapping_dict)
+        df = data.test_df.rename_columns(rename_mapping_dict)
         self.assertEqual(df.schema.fieldNames(), ['key', 'col1', 'val'])
         self.assertEqual(df.count(), 3)
 
@@ -52,7 +56,8 @@ class TestTranformMethods(unittest.TestCase):
         input schema is "K E   Y", "cols with   sp  aces", " .value"
         :return:
         """
-        df = rename_4_parquet(data.test_df)
+        # df = rename_4_parquet(data.test_df)
+        df = data.test_df.rename_4_parquet()
         # replace with logging print(df.schema.fieldNames())
         self.assertEqual(df.schema.fieldNames(), ['KEY', 'colswithspaces', '__value'])
         self.assertEqual(df.count(), 3)
@@ -60,18 +65,23 @@ class TestTranformMethods(unittest.TestCase):
     def test_unpivot(self):
         data.simple_df.printSchema()
         # ["firstname", "middlename", "lastname", "id", "location", "salary"]
-        df_unpivot = test_unpivot(data.simple_df, ["firstname", "lastname"], ["id", "location", "salary"])
+        # df_unpivot = test_unpivot(data.simple_df, ["firstname", "lastname"], ["id", "location", "salary"])
+        df_unpivot = data.simple_df.unpivot(["firstname", "lastname"], ["id", "location", "salary"])
         # the following would be logging and we need to add asserts
         df_unpivot.printSchema()
         df_unpivot.show()
+        # asserting cardinality (maybe enough)
+        self.assertEqual(df_unpivot.count(), 15)
 
     def test_flatten(self):
-        df_out = flatten(data.df_json)
+        # df_out = flatten(data.df_json)
+        df_out = data.df_json.flatten()
         self.assertEqual(len(df_out.schema.fieldNames()), 10)
         self.assertEqual(df_out.count(), 2)
 
     def test_flatten_no_explode(self):
-        df_out = flatten_no_explode(data.df_json)
+        # df_out = flatten_no_explode(data.df_json)
+        df_out = data.df_json.flatten_no_explode()
         self.assertEqual(len(df_out.schema.fieldNames()), 9)
         self.assertEqual(df_out.count(), 1)
 
@@ -89,7 +99,8 @@ class TestTranformMethods(unittest.TestCase):
         pipeline_specs = json.load(f)
         # Closing file
         f.close()
-        df_out = run_pipeline(data.test_df_float, pipeline_specs)
+        # df_out = run_pipeline(data.test_df_float, pipeline_specs)
+        df_out = data.test_df_float.run_pipeline(pipeline_specs)
         # print(df_out.schema.fieldNames())
         self.assertEqual(len(df_out.schema.fieldNames()), 2)
         self.assertEqual(df_out.count(), 6)

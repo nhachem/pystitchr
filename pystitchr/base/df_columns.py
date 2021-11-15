@@ -5,20 +5,11 @@ from stitchr_extensions.df_checks import *
 
 """
 
-# import os
-# import typing
-
 import pyspark
-from pyspark.sql.functions import col
-# need when, size, split
-from pyspark.sql.functions import when, size, split, to_timestamp
+from pyspark.sql.functions import col, when, size, split, to_timestamp
 from pyspark.sql import DataFrame
 # import typing_extensions
 import sys
-
-# from random import choice
-# from string import ascii_letters
-# import re
 
 spark = pyspark.sql.SparkSession.builder.getOrCreate()
 spark.sparkContext.setLogLevel('WARN')
@@ -148,7 +139,7 @@ def g_n_s(df: DataFrame, column_name: str, column_name_ref: str) -> (int, float)
         count = df_check.count()
     else:
         count = df_check.count() - df.filter(col(f"{column_name_ref}").isNotNull())
-    percent_null = (count / df.count())*100
+    percent_null: float = (count / df.count())*100
     return count, percent_null
 
 
@@ -181,12 +172,13 @@ def get_null_stats(df: DataFrame, column_name_list: list = None) -> DataFrame:
     :return:
     """
     # could use jinja but ok as is
-    # template = f"(case when {{STUDYID}} is null then null else 1 end) as {{STUDYID}}_null_count"
+    # template = f"(case when {{<col>>}} is null then null else 1 end) as {{<col>>}}_null_count"
     if column_name_list is None:
         c_n_l = df.schema.fieldNames()
     else:
         c_n_l = column_name_list
-    select_expr_list = list(map(lambda column_name: f"(case when {column_name} is null then 1 else 0 end) as {column_name}_null", c_n_l))
+    select_expr_list = list(map(lambda column_name:
+                                f"(case when {column_name} is null then 1 else 0 end) as {column_name}_null", c_n_l))
     # NH: ToDo change to logging.log
     print(select_expr_list)
     # df.selectExpr(*select_expr_list)

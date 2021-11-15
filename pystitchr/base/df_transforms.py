@@ -21,10 +21,6 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, concat, lit, when
 from pyspark.sql.types import *
 
-import pystitchr.base.df_transforms as dft
-import pystitchr.base.df_functions as fn
-import logging
-
 # from pystitchr.util.log4j4y import log
 from pystitchr.util.simple_logging import log
 
@@ -169,7 +165,7 @@ def right_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:
 
 
 # modify to test nested and also use set operations left.diff(right)?
-# look into panda equivalent or maybe quoalas
+# look into panda equivalent or maybe koalas
 def schema_diff(left_df: DataFrame, right_df: DataFrame):
     right_columns_set = set(right_df.schema)
     left_columns_set = set(left_df.schema)
@@ -332,7 +328,7 @@ def map_columns(df: DataFrame, rename_mapping_dict: dict) -> DataFrame:
     return rename_columns(df, rename_mapping_dict, False)
 
 
-def rename_4_parquet(df: DataFrame) -> DataFrame:
+def _rename_4_parquet(df: DataFrame) -> DataFrame:
     """
     rename all columns of the dataFrame so that we can save as a Parquet file
     :param df:
@@ -355,8 +351,8 @@ def rename_4_parquet(df: DataFrame) -> DataFrame:
     )
 
 
-def rename_4_parquet_p(df: DataFrame, dummy_list: list = [None]) -> DataFrame:
-    return rename_4_parquet(df)
+def rename_4_parquet(df: DataFrame, dummy_list: list = [None]) -> DataFrame:
+    return _rename_4_parquet(df)
 
 
 def _unpivot(df: DataFrame, unpivot_keys: list,
@@ -396,7 +392,7 @@ def unpivot(df: DataFrame, params: list) -> DataFrame:
     return _unpivot(df, _keys, _unpivot_list)
 
 
-def flatten0(data_frame: DataFrame) -> DataFrame:
+def _flatten_experimental(data_frame: DataFrame) -> DataFrame:
     """
     NH: Experimental
     :param data_frame:
@@ -418,7 +414,7 @@ def flatten0(data_frame: DataFrame) -> DataFrame:
                 f"explode_outer({field_name}) as {field_name}"]
             # exploded_df = exploded_df.selectExpr(*field_names_to_select)
             # return flatten0(exploded_df)
-            return flatten0(data_frame.selectExpr(*field_names_to_select))
+            return _flatten_experimental(data_frame.selectExpr(*field_names_to_select))
         elif isinstance(field_type, MapType):
             """
             This is quite expensive if we do not have a known enumeration of key. 
@@ -444,7 +440,7 @@ def flatten0(data_frame: DataFrame) -> DataFrame:
                 .withColumnRenamed("value", f"{field_name}__value") \
                 .withColumnRenamed("id", f"{field_name}__id").drop(field_name)
 
-            return flatten0(df_mapped)
+            return _flatten_experimental(df_mapped)
             # return data_frame
         elif isinstance(field_type, StructType):
             child_fieldnames = [f"{field_name}.{child.name}" for child in field_type]
@@ -453,7 +449,7 @@ def flatten0(data_frame: DataFrame) -> DataFrame:
             # exploded_df = exploded_df.select(*renamed_cols)
             # print(len(exploded_df.schema.fieldNames()))
             # return flatten0(exploded_df)
-            return flatten0(data_frame.select(*renamed_cols))
+            return _flatten_experimental(data_frame.select(*renamed_cols))
     # print(f"schema size is {len(data_frame.schema.fieldNames())}")
     return data_frame
 
@@ -778,136 +774,6 @@ def add_columns_lookup(df: DataFrame, mapping_dict: dict):
     return res_df
 
 
-# this class may be deprecated if we end up having 2 independent code lines (scala and python)
-# class DfExtensions(DataFrame):
-class DfExtensions:
-    """
-    set of transforms that invoke pystitchr extensions
-    wrapper around the scala implementation and interfaces
-    """
-
-    # from pyspark DataFrame ...
-    def __init__(self, jdf, sql_ctx):
-        # DataFrame(jdf, sql_ctx)
-        self._jdf = jdf
-        self.sql_ctx = sql_ctx
-        self._sc = sql_ctx and sql_ctx._sc
-        self.is_cached = False
-        self._schema = None  # initialized lazily
-        self._lazy_rdd = None
-        # Check whether _repr_html is supported or not, we use it to avoid calling _jdf twice
-        # by __repr__ and _repr_html_ while eager evaluation opened.
-        self._support_repr_html = False
-        # assert isinstance(df, object)
-        # DataFrame(df)
-
-    def left_diff_schemas(self, right_df: DataFrame) -> list:
-        """
-        still is done inside pyspark... need to modify to invoke the gateway wrapper
-        :param right_df:
-        :return:
-        """
-        left_columns_set = set(self.df.schema.names)
-        right_columns_set = set(right_df.schema.names)
-        # warning: some columns are not in the list... maybe throw a warning error?
-        return list(left_columns_set - right_columns_set)
-
-    def right_diff_schemas(self, right_df: DataFrame) -> list:
-        """
-        still is done inside pyspark... need to modify to invoke the gateway wrapper
-        :param right_df:
-        :return:
-        """
-        left_columns_set = set(self.df.schema.names)
-        right_columns_set = set(right_df.schema.names)
-        # warning: some columns are not in the list... maybe throw a warning error?
-        return list(right_columns_set - left_columns_set)
-
-    def drop_columns(self, drop_columns_list: list):
-        """
-
-        :param drop_columns_list:
-        :return:
-        """
-        df_columns_set = set(self._jdf.schema.names)
-        # warning: some columns are not in the list... maybe throw a warning error?
-        cols_that_donot_exist = set(drop_columns_list) - df_columns_set
-        # get the actual list of columns to drop
-        columns2remove = list(set(drop_columns_list) - cols_that_donot_exist)
-        # drop and return
-        # return self._jdf.drop(*columns2remove)
-        # testing 4/9/21
-        return DfExtensions(self._jdf.drop(*columns2remove))
-
-    def rename_columns(self, rename_mapping_dict: dict):
-        """
-        :param rename_mapping_dict:
-        :return: DataFrame
-        Takes a dictionary of columns to be renamed and returns a converted dataframe
-        Uses the thin wrapper around spark scala with Py4J
-        """
-        # return DfExtensions(self.sql_ctx._jvm.com.pystitchr.extensions.transform.Dataframe.renameColumns(
-        #    _dict_to_scala_map(self._sc, rename_mapping_dict)), self._jdf, self.sql_ctx)
-        # return self.sql_ctx._jvm.com.pystitchr.extensions.transform.Dataframe.renameColumns(_dict_to_scala_map(self._sc, rename_mapping_dict), self._jdf)
-        # return DfExtensions(self.sql_ctx._jvm.com.pystitchr.extensions.transform.Dataframe.renameColumns(_dict_to_scala_map(self._sc, rename_mapping_dict)), self.sql_ctx)
-        return DfExtensions(self._sc._jvm.com.stitchr.extensions.transform.Df.renameColumns(
-            _dict_to_scala_map(self._sc, rename_mapping_dict))(self._jdf), self._sc)
-
-    def rename_column(self, existing: str, new: str):
-        """Returns a new `DataFrame` by renaming an `existing` column to `new` column.
-        This is a no-op if the source schema does not contain the given `existing` column name.
-
-        :param existing: string, name of the existing column to rename.
-        :param new: string, new name of the column.
-
-        >>> example
-        df.withColumnRenamed('age', 'age2').collect()
-        [Row(age2=2, name=u'Alice'), Row(age2=5, name=u'Bob')]
-        """
-        # either calls work...
-        #
-        # return DfExtensions(self._jdf.withColumnRenamed(existing, new), self.sql_ctx)
-        return DataFrame(self._jdf.withColumnRenamed(existing, new), self.sql_ctx)
-
-
-def _dict_to_scala_map(sc, jm):
-    """
-    Convert a dict into a JVM Map.
-    """
-    return sc._jvm.PythonUtils.toScalaMap(jm)
-
-
-def transform0(self, f):
-    """
-    pyspark does not have a transform before version 3... we need to add one to DataFrame.
-    This is based on https://mungingdata.com/pyspark/chaining-dataframe-transformations/
-    """
-    return f(self)
-
-
-def run_pipeline(input_df: DataFrame, pipeline: dict, logging_level: str = 'ERROR') -> DataFrame:
-    # ToDo: control logging level globally from outside
-    logging.basicConfig(level=logging_level)
-    # don't want to modify the source so we assign it
-    df_p = input_df
-    steps = pipeline
-    log.info(f"number of steps is {len(steps)}")
-    for step in steps:
-        log.info(steps[step])
-        key = list(steps[step].keys())[0]
-        params = steps[step][key]
-        log.info(f"step is {step}, transform is {key} with attributes {params}")
-        method_to_call = getattr(dft, key)
-        df_p = df_p.transform(lambda df: method_to_call(df, params))
-        # change to log if we want info
-        # print(f"root level logging is {log.root.level}")
-        # TODO: NH need to debug as this goes through log4j and is kind of messy
-        # if logging.DEBUG >= log.root.level:
-        # logs even if we use warn or higher so commented out
-        # log.info(df_p.printSchema())
-    return df_p
-
-
 def _test():
     """
     test code
@@ -921,8 +787,6 @@ def _test():
     # ToDo need to work on this
     # t.test_right_diff_schemas()
 
-
-DataFrame.transform0 = transform0
 
 if __name__ == "__main__":
     print('running tests \n')

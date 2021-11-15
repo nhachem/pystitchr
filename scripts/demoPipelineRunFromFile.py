@@ -2,11 +2,11 @@
 On single-node emr after setting wheel and installing pystitchr
 
 pyspark
-import pipelineRuns
+import demoPipelineRunFromFile
 or
-python demoPipelineRun.py
+python demoPipelineRunFromFile.py
 
-demo pipeline runs for transformations
+: demo pipeline runs for transformations
 
 """
 
@@ -15,7 +15,9 @@ from pyspark.sql import *
 import sys
 import time
 import logging
-import pystitchr.base.df_transforms as dft
+
+# this import is technically not needed as subsequent import initializes pystitchr to include the dataframe extensions
+# import pystitchr
 from pystitchr.util.utils import *
 spark = SparkSession.builder.getOrCreate()
 # use INFO to log correctly, DEBUG is cryptic...
@@ -44,8 +46,9 @@ test_df.printSchema()
 
 df1 = test_df
 
-df_out = dft.run_pipeline(df1, pipeline_spec, logging_level)
-# this would default to ERROR which means nio logging
+# df_out = dft.run_pipeline(df1, pipeline_spec, logging_level)
+df_out = df1.run_pipeline(pipeline_spec, logging_level)
+# this would default to ERROR which means no logging
 # df_out = dft.run_pipeline(df1, pipeline_spec)
 # df_out.show(20, False)
 
