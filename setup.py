@@ -35,8 +35,9 @@ setup(
     license='http://www.apache.org/licenses/LICENSE-2.0',
     install_requires=[],
         extras_require={
+            'pystitchr': [],
             'base': [],
-            'extensions': []
+            'util': []
         },
     python_requires='>=3.6',
     classifiers=[

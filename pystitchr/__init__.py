@@ -16,11 +16,11 @@
 #
 
 # monkey patching
-import engine
-from base.df_transforms import *
-from base.df_checks import *
+from .engine import *
+from .base.df_transforms import *
+from .base.df_checks import *
 
-import base.df_transforms as dft
+import pystitchr.base.df_transforms as dft
 import pystitchr.base.df_functions as fn
 
 # Transforms
