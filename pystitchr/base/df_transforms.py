@@ -384,12 +384,14 @@ def _unpivot(df: DataFrame, unpivot_keys: list,
 test_unpivot = _unpivot
 
 
-def unpivot(df: DataFrame, params: list) -> DataFrame:
-    _keys = params[0]
-    _unpivot_list = params[1]
+def unpivot(df: DataFrame, params_dict: dict = {}) -> DataFrame:
+    _key_column = params_dict.get("key_column", 'key_column')
+    _value_column = params_dict.get("value_column", 'value')
+    _keys: list = params_dict.get("keys", [])
+    _unpivot_list = params_dict.get("unpivot_columns", []) # NH: this technically should not happen
     if len(_keys) == 0:
         _keys = list(set(df.schema.fieldNames()).difference(set(_unpivot_list)))
-    return _unpivot(df, _keys, _unpivot_list)
+    return _unpivot(df, _keys, _unpivot_list, _key_column, _value_column)
 
 
 def _flatten_experimental(data_frame: DataFrame) -> DataFrame:
@@ -666,8 +668,14 @@ def _pivot(df: DataFrame, pivoted_columns_list: list = [None]
     return spark.sql(q)
 
 
-def pivot(df: DataFrame, pivoted_columns_list: list = [None]) -> DataFrame:
-    return _pivot(df, pivoted_columns_list)
+def pivot(df: DataFrame, params_dict: dict = {}) -> DataFrame:
+    if params_dict is None:
+        return _pivot(df, [])
+    key_column = params_dict.get("key_column", 'key_column')
+    value_column = params_dict.get("value_column", 'value')
+    fn = params_dict.get("fn", 'max')
+    pivoted_columns_list: list = params_dict.get("pivot_values", [])
+    return _pivot(df, pivoted_columns_list, key_column, value_column, fn)
 
 
 def filter_op(df: DataFrame, filter_expr_list: list = ["1=1"], operation: str = 'AND') -> DataFrame:

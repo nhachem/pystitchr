@@ -55,9 +55,24 @@ pipeline_spec = {1: {'add_columns': {'BARCODE': 'get_random_alphanumeric(8, ceil
                  3: {'rename_4_parquet': []},
                  4: {"drop_columns": ["f3", "f4", "f7", "f8", "f9"]},
                  5: {"flatten": []},
-                 6: {"unpivot": [['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID', 'address__city', 'not__a__parquet________name__'], ["foo", "bar", "f5"]]},
-                 7: {"pivot": ["foo", "f5"]},
-                 8: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__', 'f5', 'foo']},
+                 # output from unpivot generates a key_column and a value column.
+                 # 6: {"unpivot": {"keys": ['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID', 'address__city',
+                 #                         'not__a__parquet________name__'],
+                 #                "unpivot_columns": ["foo", "bar", "f5"]
+                 #                }},
+                 6: {"unpivot": {"keys": ['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID',
+                                          'address__city', 'not__a__parquet________name__'],
+                                 "unpivot_columns": ["foo", "bar", "f5"],
+                                 "key_column": "key_column", "value_column": "value"
+                                 }},
+                 # pivot defaults to processing a key_column, value column-pair.
+                 # But we can specify alternates with the params dict
+                 7: {"pivot": {}},
+                 # 7: {"pivot": {"pivoted_columns": ["foo", "f5"]}},
+                 # 7: {"pivot": {"pivot_values": ["foo", "f5"],
+                 #              "key_column": "key_column", "value_column": "value"}},
+                 8: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__',
+                                     'f5', 'foo']},
                  9: {'select_exclude': ['f5']},
                  10: {'filter_and': ['WELL_NUMBER >= 20', 'WELL_NUMBER <= 30']},
                  # 11: {'filter_or': ['WELL_NUMBER in ( 20, 30)']},

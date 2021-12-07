@@ -47,5 +47,5 @@ About
 # for python
 dist/
 build/
-stitchr_extensions.egg-info/
+pystitchr.egg-info/
 __pycache__/
