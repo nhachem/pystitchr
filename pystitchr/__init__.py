@@ -25,6 +25,7 @@ import pystitchr.base.df_functions as fn
 
 # Transforms
 DataFrame.rename_columns = rename_columns
+DataFrame.add_windowed_column = add_windowed_column
 DataFrame.add_columns = add_columns
 DataFrame.drop_columns = drop_columns
 DataFrame.filter_or = filter_or

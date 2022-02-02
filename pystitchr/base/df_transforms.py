@@ -11,8 +11,6 @@ from pystitchr.base.df_transforms import *
 
 import re
 # import sys
-from random import choice
-from string import ascii_letters
 from typing import List
 
 import pyspark
@@ -20,6 +18,7 @@ import pyspark.sql.functions as F
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, concat, lit, when
 from pyspark.sql.types import *
+from pyspark.sql.window import Window
 
 # from pystitchr.util.log4j4y import log
 from pystitchr.util.simple_logging import log
@@ -261,7 +260,7 @@ def drop_columns(drop_columns_list: list, df: DataFrame) -> DataFrame:
 """
 
 
-def _not_in_schema(df: DataFrame, column_list: list)-> list:
+def _not_in_schema(df: DataFrame, column_list: list) -> list:
     """
 
     """
@@ -272,7 +271,7 @@ def _not_in_schema(df: DataFrame, column_list: list)-> list:
     return list(columns_set - schema_columns_set)
 
 
-def _in_schema(df: DataFrame, column_list: list)-> list:
+def _in_schema(df: DataFrame, column_list: list) -> list:
     """
     returns the list in the same order
 
@@ -561,16 +560,28 @@ def flatten_map(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
     return _flatten(df, mode='map')
 
 
-# need to make a function @property
-def get_random_string(length: int) -> str:
+def add_windowed_column(df: DataFrame, column_name: str, source_column: str,
+                        window_function: str, partition_by_list: list, order_by_list) -> DataFrame:
     """
-    Random string with the combination of lower and upper case
-    :param length:
-    :return:
+    adds a column derived by a window function
+    @param df:
+    @type df:
+    @param column_name:
+    @type column_name:
+    @param source_column:
+    @type source_column:
+    @param window_function:
+    @type window_function:
+    @param partition_by_list:
+    @type partition_by_list:
+    @param order_by_list:
+    @type order_by_list:
+    @return:
+    @rtype:
     """
-    letters = ascii_letters
-    result_str = ''.join(choice(letters) for _ in range(length))
-    return result_str
+    window_spec = Window.partitionBy(*partition_by_list).orderBy(*order_by_list)
+    fn = getattr(pyspark.sql.functions, window_function)
+    return df.withColumn(column_name, fn(col(source_column)).over(window_spec))
 
 
 def _add_columns(df: DataFrame, new_columns_mapping_dict: dict, strict: bool = True) -> DataFrame:
@@ -640,7 +651,8 @@ def add_column(df: DataFrame, new_column: str, transform):
 def gen_pivot_sql(df: DataFrame, pivoted_columns_list: list = [None]
                   , key_column: str = 'key_column'
                   , value_column: str = 'value'
-                  , fn: str = "max") -> str:
+                  , fn: str = "max"
+                  , hive_view: str = None) -> str:
     pivot_columns = []
     if len(pivoted_columns_list) != 0:
         pivot_columns = pivoted_columns_list
@@ -655,17 +667,30 @@ def gen_pivot_sql(df: DataFrame, pivoted_columns_list: list = [None]
     # rewrite this as a list comprehension?
     # l = pivot_columns.foldLeft("")((head, next) => {s"$head'${next}' ${next.replace(".", "__")},"}).stripSuffix(",")
     column_list = "', '".join(map(str, pivot_columns))
-    df.createOrReplaceTempView("_tmp")
-    q = f"SELECT * FROM (SELECT * FROM _tmp) PIVOT ( {fn}({value_column}) FOR {key_column} in ( '{column_list}' ))"
-    return q
+    if hive_view is None:
+        df.createOrReplaceTempView("_tmp")
+        return f"SELECT * FROM (SELECT * FROM _tmp) PIVOT ( {fn}({value_column}) FOR {key_column} in ( '{column_list}' ))"
+    else:
+        # NH: saveAsTable may not work in default spark pre 3.0?
+        # NH: seems if we use spark on a laptop we can't reuse the storage
+        spark.sql(f"drop table if exists {hive_view}_")
+        df.write.mode("overwrite").saveAsTable(f"{hive_view}_")
+        return f"SELECT * FROM (SELECT * FROM {hive_view}_) PIVOT ( {fn}({value_column}) FOR {key_column} in ( '{column_list}' ))"
 
 
 def _pivot(df: DataFrame, pivoted_columns_list: list = [None]
            , key_column: str = 'key_column'
            , value_column: str = 'value'
-           , fn: str = "max") -> DataFrame:
-    q = gen_pivot_sql(df, pivoted_columns_list, key_column, value_column, fn)
-    return spark.sql(q)
+           , fn: str = "max"
+           , hive_view: str = None) -> DataFrame:
+    q = gen_pivot_sql(df, pivoted_columns_list, key_column, value_column, fn, hive_view)
+    if hive_view is None:
+        return spark.sql(q)
+    else:
+        # NH: may add support for temp views later
+        spark.sql(f""" create or replace view {hive_view} as {q}""")
+        return spark.table(hive_view)
+    # return spark.sql(q)
 
 
 def pivot(df: DataFrame, params_dict: dict = {}) -> DataFrame:
@@ -674,8 +699,9 @@ def pivot(df: DataFrame, params_dict: dict = {}) -> DataFrame:
     key_column = params_dict.get("key_column", 'key_column')
     value_column = params_dict.get("value_column", 'value')
     fn = params_dict.get("fn", 'max')
+    hive_view = params_dict.get("hive_view", None)
     pivoted_columns_list: list = params_dict.get("pivot_values", [])
-    return _pivot(df, pivoted_columns_list, key_column, value_column, fn)
+    return _pivot(df, pivoted_columns_list, key_column, value_column, fn, hive_view)
 
 
 def filter_op(df: DataFrame, filter_expr_list: list = ["1=1"], operation: str = 'AND') -> DataFrame:

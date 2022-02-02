@@ -6,6 +6,9 @@ from pystitchr.df_checks import *
 """
 
 import json
+from random import choice
+from string import ascii_letters
+
 import pyspark
 from pyspark.sql.dataframe import DataFrame
 
@@ -58,6 +61,18 @@ def load_json_spec(file_path: str) -> dict:
     # Closing file
     f.close()
     return spec
+
+
+# need to make a function @property
+def get_random_string(length: int) -> str:
+    """
+    Random string with the combination of lower and upper case
+    :param length:
+    :return:
+    """
+    letters = ascii_letters
+    result_str = ''.join(choice(letters) for _ in range(length))
+    return result_str
 
 
 def _test():

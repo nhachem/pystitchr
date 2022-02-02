@@ -15,6 +15,7 @@ from pyspark.sql import *
 import sys
 import time
 import logging
+from pystitchr.util.utils import *
 # this import is needed as we need to initialize pystitchr to include the dataframe extensions
 import pystitchr
 
@@ -45,6 +46,7 @@ test_df.printSchema()
 # note: select exclude is like drop_columns but may run more efficiently
 # rename_4_parquet is a wrapper with dummy params for rename_4_parquet... should be able to do better
 
+random_pivot_table = get_random_string(10)
 pipeline_spec = {1: {'add_columns': {'BARCODE': 'get_random_alphanumeric(8, ceil(f3*1000))',
                                      'WELL_NUMBER': 'ceil(f2*100)',
                                      'PLATE_ID': 'get_random_alphanumeric(8, ceil(f4*1000))',
@@ -67,8 +69,9 @@ pipeline_spec = {1: {'add_columns': {'BARCODE': 'get_random_alphanumeric(8, ceil
                                  }},
                  # pivot defaults to processing a key_column, value column-pair.
                  # But we can specify alternates with the params dict
-                 7: {"pivot": {}},
-                 # 7: {"pivot": {"pivoted_columns": ["foo", "f5"]}},
+                 # 7: {"pivot": {}},
+                 7: {"pivot": {"hive_view": f"test_{random_pivot_table}"}},
+                 # 7: {"pivot": {"pivoted_values": ["foo", "f5"]}},
                  # 7: {"pivot": {"pivot_values": ["foo", "f5"],
                  #              "key_column": "key_column", "value_column": "value"}},
                  8: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__',
@@ -86,7 +89,8 @@ df_out = df1.run_pipeline(pipeline_spec, logging_level)
 # df_out = dft.run_pipeline(df1, pipeline_spec)
 df_out.printSchema()
 # df_out.show(20, False)
-
+# checking the pivoted view
+spark.sql(f"select * from test_{random_pivot_table}").show()
 t_start = time.perf_counter()
 df_out.write.format('csv').option('header', True).mode('overwrite').save(f"{data_dir}/testPipeline.csv")
 print(f"runtime is {round(time.perf_counter() - t_start, 2)}")
