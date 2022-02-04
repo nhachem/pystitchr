@@ -17,7 +17,7 @@ setup(
     long_description_content_type="text/markdown",
     author='Nabil Hachem',
     author_email='nabilihachem@gmail.com',
-    url='https://github.com/nhachem/stitchr-python/tree/master',
+    url='https://github.com/nhachem/pystitchr/tree/master',
     packages=find_packages(),
     # packages=['pystitchr',
     #          'pystitchr.base',
@@ -40,6 +40,7 @@ setup(
             'util': []
         },
     python_requires='>=3.6',
+    # python_version='>=3.6',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: Apache Software License',
