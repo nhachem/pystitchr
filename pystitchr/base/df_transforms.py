@@ -87,6 +87,14 @@ we could pass the columns as a list and then convert tin the function
 Need to add a catch all StringType() to the map
 """
 
+error_schema = StructType([StructField("function_called", StringType(), True),
+                                   StructField("error_message", StringType(), True)])
+
+
+def generate_error_df(source: str, error_msg: str) -> DataFrame:
+    error_msg = [(source, error_msg)]
+    return spark.createDataFrame(data=error_msg, schema=error_schema)
+
 
 # using call by string name getattr()
 def generate_schema_by_string(domain: str, columns: list, attributes_df: DataFrame):
@@ -191,7 +199,8 @@ def _select_list(df: DataFrame, column_list: list) -> DataFrame:
     # maybe better to change to a try except or better setup app error trapping
     if len(not_in_schema) > 0:
         log.error(f"App Error: columns to select {not_in_schema} are not in the dataframe schema")
-        exit(1)
+        return generate_error_df("_select_list",
+                                 f"App Error: columns to select {not_in_schema} are not in the dataframe schema")
     cl: list = f"`{'`,`'.join(column_list)}`".split(',')
     return df.select(*cl)
 
@@ -208,7 +217,8 @@ def select_list(df: DataFrame, column_list: list, strict: bool = True) -> DataFr
     # maybe better to change to a try except or better setup app error trapping
     if len(not_in_schema) > 0 and strict:
         log.error(f"App Error: columns to select {not_in_schema} are not in the dataframe schema")
-        exit(1)
+        return generate_error_df("select_list",
+                                 f"App Error: columns to select {not_in_schema} are not in the dataframe schema")
     in_schema = _in_schema(df, column_list)
     cl: list = f"`{'`,`'.join(in_schema)}`".split(',')
     return df.select(*cl)
@@ -282,7 +292,7 @@ def _in_schema(df: DataFrame, column_list: list) -> list:
 def rename_columns(df: DataFrame, rename_mapping_dict: dict, strict: bool = True) -> DataFrame:
     """
     Takes a dictionary of columns to be renamed and returns a converted dataframe
-    if strict then throws errors and exits if any column is not in the schema
+    if strict then throws errors and exitess if any column is not in the schema
     else it renames all existing columns and skips the non existing ones
     """
     # Takes a dictionary of columns to be renamed and returns a converted dataframe
@@ -291,7 +301,8 @@ def rename_columns(df: DataFrame, rename_mapping_dict: dict, strict: bool = True
     # maybe better to change to a try except or better setup app error trapping
     if len(not_in_schema) > 0 and strict:
         log.error(f"App Error: columns to rename {not_in_schema} are not in the dataframe schema")
-        exit(1)
+        return generate_error_df("rename_columns",
+                                  f"App Error: columns to rename {not_in_schema} are not in the dataframe schema")
     # we use sqlExpr to keep the schema during the rename process
     df_new_columns: list = [f"`{c}` as `{rename_mapping_dict[c]}`" if (c in rename_mapping_dict)
                             else f"`{c}`"
@@ -604,7 +615,8 @@ def _add_columns(df: DataFrame, new_columns_mapping_dict: dict, strict: bool = T
     # maybe better to change to a try except or better setup app error trapping
     if len(in_schema) > 0 and strict:
         log.error(f"App Error: columns to add {in_schema} are already in the dataframe schema")
-        exit(1)
+        return generate_error_df("add_columns",
+                                 f"App Error: columns to add {not_in_schema} are already in the dataframe schema")
     else:
         if len(in_schema) > 0:
             log.warn(f"App warning: columns to add {in_schema} will be skipped")
