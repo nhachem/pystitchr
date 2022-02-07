@@ -366,9 +366,9 @@ def rename_4_parquet(df: DataFrame, dummy_list: list = [None]) -> DataFrame:
 
 
 def _unpivot(df: DataFrame, unpivot_keys: list,
-             unpivot_column_list: list,
-             key_column: str = "key_column",
-             value_column: str = "value") -> DataFrame:
+                unpivot_column_list: list,
+                key_column: str = "key_column",
+                value_column: str = "value") -> DataFrame:
     """
 
     :param df:
@@ -390,10 +390,6 @@ def _unpivot(df: DataFrame, unpivot_keys: list,
     return spark.sql(q)
 
 
-# test suite does not like _unpivot. This is strange....
-test_unpivot = _unpivot
-
-
 def unpivot(df: DataFrame, params_dict: dict = {}) -> DataFrame:
     _key_column = params_dict.get("key_column", 'key_column')
     _value_column = params_dict.get("value_column", 'value')
@@ -402,6 +398,28 @@ def unpivot(df: DataFrame, params_dict: dict = {}) -> DataFrame:
     if len(_keys) == 0:
         _keys = list(set(df.schema.fieldNames()).difference(set(_unpivot_list)))
     return _unpivot(df, _keys, _unpivot_list, _key_column, _value_column)
+
+
+def unpivot_all(df: str, pk_list: list) -> DataFrame:
+    """
+
+    @param df:
+    @type df:
+    @param pk_list:
+    @type pk_list:
+    @return:
+    @rtype:
+    """
+    all_columns_set = set(df.columns)
+    _keys = pk_list
+    _unpivot_list = list(all_columns_set - set(_keys))
+    # unpivot_spec = {"keys": _keys,
+    #                 "unpivot_columns": _unpivot_List,
+    #                 "key_column": "property_key", "value_column": "property_value"
+    #                 }
+    # NH can use this or the simpler below
+    # return df.unpivot(unpivot_spec)
+    return _unpivot(df, _keys, _unpivot_list, "property_key", "property_value")
 
 
 def _flatten_experimental(data_frame: DataFrame) -> DataFrame:

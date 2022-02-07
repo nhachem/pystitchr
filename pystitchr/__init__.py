@@ -32,8 +32,8 @@ DataFrame.filter_or = filter_or
 DataFrame.filter_op = filter_op
 DataFrame.filter_and = filter_and
 DataFrame.pivot = pivot
-# ToDo: NH need to debug the unpivot code
-DataFrame.unpivot = test_unpivot
+DataFrame.unpivot = unpivot
+DataFrame.unpivot_all = unpivot_all
 DataFrame.flatten = flatten
 DataFrame.flatten_no_explode = flatten_no_explode
 DataFrame.rename_4_parquet = rename_4_parquet

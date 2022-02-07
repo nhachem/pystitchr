@@ -65,9 +65,18 @@ class TestTranformMethods(unittest.TestCase):
     def test_unpivot(self):
         data.simple_df.printSchema()
         # ["firstname", "middlename", "lastname", "id", "location", "salary"]
-        # df_unpivot = test_unpivot(data.simple_df, ["firstname", "lastname"], ["id", "location", "salary"])
-        df_unpivot = data.simple_df.unpivot(["firstname", "lastname"], ["id", "location", "salary"])
-        # the following would be logging and we need to add asserts
+        df_unpivot = data.simple_df.unpivot({"keys": ["firstname", "lastname"], "unpivot_columns": ["id", "location", "salary"]})
+        # the following would be logging
+        df_unpivot.printSchema()
+        df_unpivot.show()
+        # asserting cardinality (maybe enough)
+        self.assertEqual(df_unpivot.count(), 15)
+
+    def test_unpivot_all(self):
+        data.simple_df.printSchema()
+        # ["firstname", "middlename", "lastname", "id", "location", "salary"]
+        df_unpivot = data.simple_df.unpivot_all(["firstname", "middlename", "lastname"])
+        # the following would be logging
         df_unpivot.printSchema()
         df_unpivot.show()
         # asserting cardinality (maybe enough)
