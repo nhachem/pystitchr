@@ -40,6 +40,9 @@ DataFrame.rename_4_parquet = rename_4_parquet
 DataFrame.select_list = select_list
 DataFrame.select_exclude = select_exclude
 
+# schema related
+DataFrame.get_schema = get_schema
+
 # checks and validation
 DataFrame.check_numeric_bound = check_numeric_bound
 DataFrame.check_upper_bound = check_upper_bound

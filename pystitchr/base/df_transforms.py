@@ -16,7 +16,8 @@ from typing import List
 import pyspark
 import pyspark.sql.functions as F
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col, concat, lit, when
+from pyspark.sql.functions import col, concat, lit, when, explode
+# , posexplode, arrays_zip
 from pyspark.sql.types import *
 from pyspark.sql.window import Window
 
@@ -94,6 +95,18 @@ error_schema = StructType([StructField("function_called", StringType(), True),
 def generate_error_df(source: str, error_msg: str) -> DataFrame:
     error_msg = [(source, error_msg)]
     return spark.createDataFrame(data=error_msg, schema=error_schema)
+
+
+def get_schema(df: DataFrame) -> DataFrame:
+    """
+    returns the schema of  dataframe as a dataframe
+    @param df:
+    @type df:
+    @return:
+    @rtype:
+    """
+    _df = spark.read.json(spark.sparkContext.parallelize([df.schema.json()]))
+    return _df.withColumn("field", explode("fields")).drop("fields").select("field.*")
 
 
 # using call by string name getattr()
