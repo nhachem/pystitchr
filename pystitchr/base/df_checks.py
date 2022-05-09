@@ -298,10 +298,10 @@ def check_all_null(df: DataFrame, column_list: list) -> DataFrame:
     :return:
     """
     # here checks are on each individually and returns the list of columns (as a dataframe ?) that are actually nulls
-    # if input list is null then all columns are checks. If except is true (default is false) then all columns except in the list are checked.
-    # difficult to do across all columns... one needs to apply .isNull to each column and then collapse to verify
-    # ToDo NH: place holder
-    # will use the check_column_null
+    # if input list is null then all columns are checks. If except is true (default is false) then all columns except
+    # in the list are checked. difficult to do across all columns... one needs to apply .isNull to each column and
+    # then collapse to verify
+    # ToDo NH: place holder will use the check_column_null
     print("ToDo: PLACE HOLDER, NOT IMPLEMENTED YET")
     return df #.where(col("dt_mvmt").isNull())
 
@@ -327,9 +327,25 @@ def domain_check(df: DataFrame, src_column_names_list: list,
     return df.select(*src_column_names_list).subtract(r_df)
 
 
+def get_dup(df: DataFrame, unique_key: list) -> DataFrame:
+    """
+    returns a dataframe of records that fail the uniqueness check
+    @param df:
+    @type df:
+    @param unique_key:
+    @type unique_key:
+    @return:
+    @rtype:
+    """
+    return df.select(*unique_key) \
+        .groupBy(*unique_key) \
+        .count().withColumnRenamed("count", '_cnt_unique') \
+        .filter(col('_cnt_unique') > 1)
+
+
 def unique_check(df,
                  column_names_list: list
-                 ) -> DataFrame:
+                 ) -> bool:
     """
     like a pk check
     :param df:
@@ -337,11 +353,11 @@ def unique_check(df,
     # :param pass_through:
     :return:
     """
-    df_pk: DataFrame = df.select(*column_names_list)\
-        .groupBy(*column_names_list)\
-        .count().withColumnRenamed("count", "group_count")\
-        .filter(col("group_count") > 1)
-    return df_pk
+    _count_non_unique = df.get_dup(column_names_list).count()
+    if _count_non_unique == 0:
+        return True
+    else:
+        return False
 
 
 def _test():

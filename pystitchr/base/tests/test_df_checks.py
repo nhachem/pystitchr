@@ -1,11 +1,12 @@
 """
-stitchr_extensions tests
+pystitchr tests
 
 """
 import unittest
 from resources import data
 from pyspark.sql.functions import when
 from pystitchr.base.df_columns import *
+
 
 class TestCheckMethods(unittest.TestCase):
 
@@ -20,7 +21,6 @@ class TestCheckMethods(unittest.TestCase):
         df_transformed.printSchema()
         self.assertEqual(cnt, 2)
     """
-
 
 
 if __name__ == '__main__':

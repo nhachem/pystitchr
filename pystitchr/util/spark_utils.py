@@ -14,12 +14,26 @@ def build_disjunctive_join_expression(
 
 
 def build_conjunctive_join_expression(
+        left_columns_list: list,
+        right_columns_list: list) -> Column:
+    return functools.reduce(
+        operator.and_, map(lambda x: col("l." + x[0]) == col("r." + x[1]), zip(left_array, right_array)))
+
+
+def _build_conjunctive_join_expression(
         left_columns_string: str,
         right_columns_string: str) -> Column:
     left_array: list = left_columns_string.split(",")
     right_array: list = right_columns_string.split(",")
     return functools.reduce(
         operator.and_, map(lambda x: col("l." + x[0]) == col("r." + x[1]), zip(left_array, right_array)))
+
+
+def build_conjunctive_join_expression(
+        left_columns_list: list,
+        right_columns_list: list) -> Column:
+    return functools.reduce(
+        operator.and_, map(lambda x: col("l." + x[0]) == col("r." + x[1]), zip(left_columns_list, right_columns_list)))
 
 
 def dynamic_join(

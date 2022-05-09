@@ -17,15 +17,15 @@ spark.sparkContext.setLogLevel('WARN')
 
 def add_dup_flag(df: DataFrame, unique_key: list) -> DataFrame:
     """
-    NH: this can be done with sql by ceating a temp viw and running a sql on it
+    NH: this can be done with sql by creating a temp view
     This approach works for any schema
     """
     r_unique_key = [f"r_{k}" for k in unique_key ]
     # print(r_unique_key)
     _dup_keys = df.get_dup(unique_key) \
                   .add_columns({'concat_pks': f"concat({','.join(unique_key)})",}) \
-                  .drop('_cnt_unique') \
-    # can use the name_columns from pystitchr but ok to do this
+                  .drop('_cnt_unique')
+    # can use the rename_columns instead
     for k in unique_key:
         _dup_keys = _dup_keys.withColumnRenamed(k, f"r_{k}")
     # _dup_keys.printSchema()

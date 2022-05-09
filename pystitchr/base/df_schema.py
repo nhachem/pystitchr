@@ -10,8 +10,10 @@ from stitchr_extensions.df_schema import *
 # import typing
 
 import pyspark
-from pyspark.sql.types import * # StructField, StructType, ArrayType, MapType
-from pyspark.sql.functions import col, concat, lit, when
+# StructField, StructType, ArrayType, MapType
+from pyspark.sql.types import *
+# col, concat, lit, when, explode
+from pyspark.sql.functions import when, explode
 from pyspark.sql.dataframe import DataFrame
 import pyspark.sql.types as t
 import pyspark.sql.functions as f
@@ -25,6 +27,8 @@ import re
 
 spark = (pyspark.sql.SparkSession.builder.getOrCreate())
 spark.sparkContext.setLogLevel('WARN')
+sc = spark.sparkContext
+
 """
 dict structures that we can get from data catalogs
 """
@@ -161,6 +165,11 @@ def generate_ordered_column_list(domain: str, attributes_df: DataFrame) -> list:
         .collect()
 
     return [row['variable_name'] for row in row_list]
+
+
+def get_schema(df: DataFrame) -> DataFrame:
+    _df = spark.read.json(sc.parallelize([df.schema.json()]))
+    return _df.withColumn("field", explode("fields")).drop("fields").select("field.*")
 
 
 def left_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:

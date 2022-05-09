@@ -19,9 +19,11 @@
 from .engine import *
 from .base.df_transforms import *
 from .base.df_checks import *
+from .base.df_data_quality import *
 
 import pystitchr.base.df_transforms as dft
 import pystitchr.base.df_functions as fn
+import pystitchr.base.df_checks as chck
 
 # Transforms
 DataFrame.rename_columns = rename_columns
@@ -51,9 +53,12 @@ DataFrame.check_less_than = check_less_than
 DataFrame.check_greater_than = check_greater_than
 DataFrame.check_negative_numeric = check_negative_numeric
 DataFrame.check_positive_numeric = check_positive_numeric
-DataFrame.unique_check = unique_check
+DataFrame.get_dup = get_dup
+DataFrame.domain_check = domain_check
+
+# data quality
+DataFrame.add_dup_flag = add_dup_flag
 
 # engine.run_pipeline
 DataFrame.run_pipeline = engine.run_pipeline
 DataFrame.transform0 = engine.transform0
-
