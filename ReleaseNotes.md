@@ -1,9 +1,10 @@
  # PyStitchr: (Data)Stitchr (Python Version)
 
-## Release 0.2
+## Release 0.3
 
 ### Major changes 
-* the spec interfaces for the pivot and unpivot transforms are different to the ones in release 0.1
+* started adding support for data quality functions
+* many extensions to transform functions
 
 ### Shortcomings
 * logging is not well-tested
