@@ -45,7 +45,7 @@ Blog
 About
 
 # for python
-dist/
+# dist/
 build/
 pystitchr.egg-info/
 __pycache__/
