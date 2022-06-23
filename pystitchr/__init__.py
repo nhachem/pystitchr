@@ -61,4 +61,6 @@ DataFrame.add_dup_flag = add_dup_flag
 
 # engine.run_pipeline
 DataFrame.run_pipeline = engine.run_pipeline
+# deprecated after v0.3
+DataFrame.run_pipeline_v0_3 = engine.run_pipeline_v0_3
 DataFrame.transform0 = engine.transform0

@@ -89,10 +89,19 @@ Need to add a catch all StringType() to the map
 """
 
 error_schema = StructType([StructField("function_called", StringType(), True),
-                                   StructField("error_message", StringType(), True)])
+                           StructField("error_message", StringType(), True)])
 
 
 def generate_error_df(source: str, error_msg: str) -> DataFrame:
+    """
+    returns a dataframe with the error with schema (data, schema
+    @param source:
+    @type source:
+    @param error_msg:
+    @type error_msg:
+    @return:
+    @rtype:
+    """
     error_msg = [(source, error_msg)]
     return spark.createDataFrame(data=error_msg, schema=error_schema)
 
@@ -111,9 +120,21 @@ def get_schema(df: DataFrame) -> DataFrame:
 
 # using call by string name getattr()
 def generate_schema_by_string(domain: str, columns: list, attributes_df: DataFrame):
+    """
+    generates the schema struct object using call by string name getattr()
+    NH: to move to df_schema module?
+    @param domain:
+    @type domain:
+    @param columns:
+    @type columns:
+    @param attributes_df:
+    @type attributes_df:
+    @return:
+    @rtype:
+    """
     import pyspark.sql.types as t
     filter_string = "','".join(columns)
-    col_df = spark.createDataFrame(columns, StringType())
+    col_df: DataFrame = spark.createDataFrame(columns, StringType())
 
     column_meta_df = attributes_df \
         .filter(f"domain_prefix = '{domain}'") \
@@ -136,8 +157,20 @@ def generate_schema_by_string(domain: str, columns: list, attributes_df: DataFra
 
 
 def generate_missing_columns(domain: str, columns: list, attributes_df: DataFrame) -> list:
+    """
+    generates missing columns from a dataframe containing attributes and returns the list
+    NH: to move to df_schema module?
+    @param domain:
+    @type domain:
+    @param columns:
+    @type columns:
+    @param attributes_df:
+    @type attributes_df:
+    @return:
+    @rtype:
+    """
     # using call by string name getattr()
-    col_df = spark.createDataFrame(columns, StringType())
+    col_df: DataFrame = spark.createDataFrame(columns, StringType())
     column_meta_df = attributes_df \
         .filter(f"domain_prefix = '{domain}'") \
         .select("sequence", "variable_name", "datatype", "core")
@@ -156,10 +189,15 @@ def generate_missing_columns(domain: str, columns: list, attributes_df: DataFram
 
 def left_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:
     """
-
-    :param left_df:
-    :param right_df:
-    :return:
+    takes 2 dataframes (left and right) and
+    returns a list of columns in left DataFrame set but not in the right DataFrame
+    NH: to move to df_schema module?
+    @param left_df:
+    @type left_df:
+    @param right_df:
+    @type right_df:
+    @return:
+    @rtype:
     """
     left_columns_set = set(left_df.schema.fieldNames())
     right_columns_set = set(right_df.schema.fieldNames())
@@ -171,14 +209,18 @@ def left_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:
 
 def right_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:
     """
-
-    :param left_df:
-    :param right_df:
-    :return:
+    takes 2 dataframes (left and right) and
+    returns a list of columns in right DataFrame  but not in the left DataFrame
+    NH: to move to df_schema module?
+    @param left_df:
+    @type left_df:
+    @param right_df:
+    @type right_df:
+    @return:
+    @rtype:
     """
     left_columns_set = set(left_df.schema.names)
     right_columns_set = set(right_df.schema.names)
-    # what is the toSet on python? .toSet
     # print(list(df_columns_set))
     # warn that some columns are not in the list... Or maybe throw an error?
     return list(right_columns_set - left_columns_set)
@@ -187,15 +229,34 @@ def right_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:
 # modify to test nested and also use set operations left.diff(right)?
 # look into panda equivalent or maybe koalas
 def schema_diff(left_df: DataFrame, right_df: DataFrame):
+    """
+    returns the left and right schema difference
+    NH: to move to df_schema module?
+    @param left_df:
+    @type left_df:
+    @param right_df:
+    @type right_df:
+    @return:
+    @rtype:
+    """
     right_columns_set = set(right_df.schema)
     left_columns_set = set(left_df.schema)
-    return ([l for l in left_df.schema if l not in right_columns_set],
-            [r for r in right_df.schema if r not in left_columns_set]
+    return ([left for left in left_df.schema if left not in right_columns_set],
+            [right for right in right_df.schema if right not in left_columns_set]
             )
 
 
-# to add to pystitchr
 def fields_diff(left_df: DataFrame, right_df: DataFrame):
+    """
+    difference of field names (similar to schema_diff but only on names)
+    NH: to move to df_schema module?
+    @param left_df:
+    @type left_df:
+    @param right_df:
+    @type right_df:
+    @return:
+    @rtype:
+    """
     l_set = set(left_df.schema.fieldNames())
     r_set = set(right_df.schema.fieldNames())
     return l_set.difference(r_set), r_set.difference(l_set)
@@ -203,10 +264,14 @@ def fields_diff(left_df: DataFrame, right_df: DataFrame):
 
 def _select_list(df: DataFrame, column_list: list) -> DataFrame:
     """
+    strictly restrictive select list of columns. if any columns in column_list are not in schema it throws an error
 
-    :param df:
-    :param column_list:
-    :return:
+    @param df:
+    @type df:
+    @param column_list:
+    @type column_list:
+    @return:
+    @rtype:
     """
     not_in_schema = _not_in_schema(df, column_list)
     # maybe better to change to a try except or better setup app error trapping
@@ -220,11 +285,14 @@ def _select_list(df: DataFrame, column_list: list) -> DataFrame:
 
 def select_list(df: DataFrame, column_list: list, strict: bool = True) -> DataFrame:
     """
+    allows for permissive or restrictive select of columns from column_list.
+    If restrictive it errors out of the select_list is not fully included in the schema of the dataframe df
 
-    :param df:
-    :param column_list:
-    :param strict:
-    :return:
+    @param df:
+    @param column_list:
+    @param strict: default is True that is restrictive. False allows selecting the intersect of column_list
+    and schema columns
+    @return:
     """
     not_in_schema = _not_in_schema(df, column_list)
     # maybe better to change to a try except or better setup app error trapping
@@ -239,11 +307,12 @@ def select_list(df: DataFrame, column_list: list, strict: bool = True) -> DataFr
 
 def select_list_from(df: DataFrame, column_list: list) -> DataFrame:
     """
-    permissive select_list
+    permissive select_list. that is it returns the intersection of columns in
+    the schema of df that are part of the column_list
 
-    :param df:
-    :param column_list:
-    :return:
+    @param df:
+    @param column_list:
+    @return: a dataframe of the selected column_list
     """
     return select_list(df, column_list, False)
 
@@ -260,10 +329,10 @@ def select_exclude(df: DataFrame, columns_2_exclude: list) -> DataFrame:
 
 def drop_columns(df: DataFrame, drop_columns_list: list) -> DataFrame:
     """
-
-    :param drop_columns_list:
-    :param df:
-    :return:
+    removes any column in the drop_columns_list. skip any non-existing columns
+    @param drop_columns_list:
+    @param df:
+    @return:
     """
     df_columns_set = set(df.schema.fieldNames())
     # warn that some columns are not in the list... Or maybe throw an error?
@@ -285,7 +354,10 @@ def drop_columns(drop_columns_list: list, df: DataFrame) -> DataFrame:
 
 def _not_in_schema(df: DataFrame, column_list: list) -> list:
     """
-
+    check to see if column_list is or is not in schema of df
+    @param df: input DataFrame
+    @param column_list: list of columns to check which ones are not in the schema of df
+    @return: list of what is not in the schema of df. if none then all are in the schema
     """
     df_columns: list = df.schema.fieldNames()
     # check if any column to be renamed is non existent
@@ -296,26 +368,36 @@ def _not_in_schema(df: DataFrame, column_list: list) -> list:
 
 def _in_schema(df: DataFrame, column_list: list) -> list:
     """
-    returns the list in the same order
+    check if columns in columns_list are in schema
 
+    @param df: input DataFrame
+    @param column_list:
+    @return: returns the list in the same order of what is in the schema of df
     """
     return [c for c in column_list if c in df.schema.fieldNames()]
 
 
 def rename_columns(df: DataFrame, rename_mapping_dict: dict, strict: bool = True) -> DataFrame:
     """
-    Takes a dictionary of columns to be renamed and returns a converted dataframe
+    Takes a dictionary of columns to be renamed and returns a converted dataframe.
     if strict then throws errors and exitess if any column is not in the schema
     else it renames all existing columns and skips the non existing ones
-    """
-    # Takes a dictionary of columns to be renamed and returns a converted dataframe
 
+    @param df:
+    @type df:
+    @param rename_mapping_dict:
+    @type rename_mapping_dict:
+    @param strict:
+    @type strict:
+    @return:
+    @rtype:
+    """
     not_in_schema = _not_in_schema(df, rename_mapping_dict.keys())
     # maybe better to change to a try except or better setup app error trapping
     if len(not_in_schema) > 0 and strict:
         log.error(f"App Error: columns to rename {not_in_schema} are not in the dataframe schema")
         return generate_error_df("rename_columns",
-                                  f"App Error: columns to rename {not_in_schema} are not in the dataframe schema")
+                                 f"App Error: columns to rename {not_in_schema} are not in the dataframe schema")
     # we use sqlExpr to keep the schema during the rename process
     df_new_columns: list = [f"`{c}` as `{rename_mapping_dict[c]}`" if (c in rename_mapping_dict)
                             else f"`{c}`"
@@ -332,21 +414,28 @@ def rename_column(df: DataFrame, existing: str, new: str) -> DataFrame:
     This is a no-op if schema doesn't contain the given column name.
     Effectively a wrapper over withColumnRenamed
 
-    :param df:
-    :rtype: object
-    :param existing: string, name of the existing column to rename.
-    :param new: string, new name of the column.
+    @param df:
+    @type df: object
+    @param existing: string, name of the existing column to rename.
+    @type existing:
+    @param new: string, new name of the column.
+    @type new:
+    @return:
+    @rtype:
     """
     return df.withColumnRenamed(existing, new)
 
 
 def map_columns(df: DataFrame, rename_mapping_dict: dict) -> DataFrame:
     """
-    This function renames all existing columns and skips the non-existing ones
-    :param df:
-    :param rename_mapping_dict:
-    :return: DataFrame
     Takes a dictionary of columns to be renamed and returns a converted dataframe
+    This function renames all existing columns and skips the non-existing ones
+    @param df:
+    @type df:
+    @param rename_mapping_dict:
+    @type rename_mapping_dict:
+    @return:
+    @rtype:
     """
     return rename_columns(df, rename_mapping_dict, False)
 
@@ -354,8 +443,12 @@ def map_columns(df: DataFrame, rename_mapping_dict: dict) -> DataFrame:
 def _rename_4_parquet(df: DataFrame) -> DataFrame:
     """
     rename all columns of the dataFrame so that we can save as a Parquet file
-    :param df:
-    :return:
+    uses default delimiter of __
+    NH: to extend by externalizing the regex and delimiter. Would make it more generic
+    @param df:
+    @type df:
+    @return:
+    @rtype:
     """
     # need to add left/right trims and replace multiple __ with one?
     # r = "[ ,;{}()\n\t=]"
@@ -375,22 +468,40 @@ def _rename_4_parquet(df: DataFrame) -> DataFrame:
 
 
 def rename_4_parquet(df: DataFrame, dummy_list: list = [None]) -> DataFrame:
+    """
+    same as _rename_4_parquet. dummy_list is unsued but is needed to work with the framework
+    rename all columns of the dataFrame so that we can save as a Parquet file
+    uses default delimiter of __
+    @param df:
+    @type df:
+    @param dummy_list:
+    @type dummy_list:
+    @return:
+    @rtype:
+    """
     return _rename_4_parquet(df)
 
 
 def _unpivot(df: DataFrame, unpivot_keys: list,
-                unpivot_column_list: list,
-                key_column: str = "key_column",
-                value_column: str = "value") -> DataFrame:
+             unpivot_column_list: list,
+             key_column: str = "key_column",
+             value_column: str = "value") -> DataFrame:
     """
 
-    :param df:
-    :param unpivot_keys:
-    :param unpivot_column_list:
-    :param key_column:
-    :param value_column:
-    :return:
+    @param df:
+    @type df:
+    @param unpivot_keys:
+    @type unpivot_keys:
+    @param unpivot_column_list:
+    @type unpivot_column_list:
+    @param key_column:
+    @type key_column:
+    @param value_column:
+    @type value_column:
+    @return:
+    @rtype:
     """
+
     # we can improve by checking the parameter lists to be in the schema
     stack_fields_array = unpivot_column_list
     # we need to cast to STRING as we may have int, double , etc... we would couple this with extracting the types
@@ -404,6 +515,15 @@ def _unpivot(df: DataFrame, unpivot_keys: list,
 
 
 def unpivot(df: DataFrame, params_dict: dict = {}) -> DataFrame:
+    """
+
+    @param df:
+    @type df:
+    @param params_dict:
+    @type params_dict:
+    @return:
+    @rtype:
+    """
     _key_column = params_dict.get("key_column", 'key_column')
     _value_column = params_dict.get("value_column", 'value')
     _keys: list = params_dict.get("keys", [])
@@ -438,8 +558,11 @@ def unpivot_all(df: str, pk_list: list) -> DataFrame:
 def _flatten_experimental(data_frame: DataFrame) -> DataFrame:
     """
     NH: Experimental
-    :param data_frame:
-    :return:
+
+    @param data_frame:
+    @type data_frame:
+    @return:
+    @rtype:
     """
     fields: List[StructField] = data_frame.schema.fields
     field_names: list = data_frame.schema.fieldNames()
@@ -527,6 +650,22 @@ def flatten_no_explode(data_frame: DataFrame) -> DataFrame:
 
 
 def _flatten(data_frame: DataFrame, mode: str = 'full', delimiter: str = '__') -> DataFrame:
+    """
+    # NH: need to document
+    # cases are full means full explode.
+    #           struct only structs,
+    #           map will unwind the maps as a pivot and a group by + structs
+    #           array will effectively do struct and arrays only (with explode not positional)
+
+    @param data_frame:
+    @type data_frame:
+    @param mode:
+    @type mode:
+    @param delimiter:
+    @type delimiter:
+    @return:
+    @rtype:
+    """
     # cases are full means full explode.
     #           struct only structs,
     #           map will unwind the maps as a pivot and a group by + structs
@@ -584,6 +723,15 @@ def _flatten(data_frame: DataFrame, mode: str = 'full', delimiter: str = '__') -
 
 
 def flatten(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
+    """
+
+    @param df:
+    @type df:
+    @param dummy_param_list:
+    @type dummy_param_list:
+    @return:
+    @rtype:
+    """
     return _flatten(df)
 
 
@@ -591,14 +739,41 @@ def flatten(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
 
 
 def flatten_struct(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
+    """
+
+    @param df:
+    @type df:
+    @param dummy_param_list:
+    @type dummy_param_list:
+    @return:
+    @rtype:
+    """
     return _flatten(df, mode='struct')
 
 
 def flatten_array(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
+    """
+
+    @param df:
+    @type df:
+    @param dummy_param_list:
+    @type dummy_param_list:
+    @return:
+    @rtype:
+    """
     return flatten(df, mode='array')
 
 
 def flatten_map(df: DataFrame, dummy_param_list: list = [None]) -> DataFrame:
+    """
+
+    @param df:
+    @type df:
+    @param dummy_param_list:
+    @type dummy_param_list:
+    @return:
+    @rtype:
+    """
     return _flatten(df, mode='map')
 
 
@@ -629,14 +804,20 @@ def add_windowed_column(df: DataFrame, column_name: str, source_column: str,
 def _add_columns(df: DataFrame, new_columns_mapping_dict: dict, strict: bool = True) -> DataFrame:
     """
     This takes a dict of (new_column: str -> sql_expr: str)
-    NOTICE: the code uses a | delimiter to slit a string.
+    NOTICE: the code uses a | delimiter to split a string.
     If a special function uses a delimiter then this function will fail
     ToDo: NH. If the | is an issue, we may use a default delimiter of | but allow to pass different ones as needed
     the approach would be the most efficient as the transform expressions may be quite complex.
     The implication is that UDFs are registered
-    :param df:
-    :param new_columns_mapping_dict: maps of {new_column: str -> sql_expr: str }
-    :return:
+
+    @param df:
+    @type df:
+    @param new_columns_mapping_dict:
+    @type new_columns_mapping_dict:
+    @param strict:
+    @type strict:
+    @return:
+    @rtype:
     """
     # ToDo: check also for all columns used in the functions?! This would not be trivial
     df_out = df
@@ -666,27 +847,43 @@ def _add_columns(df: DataFrame, new_columns_mapping_dict: dict, strict: bool = T
 
 def add_columns(df: DataFrame, new_columns_mapping_dict: dict) -> DataFrame:
     """
-    We are assuming that adding columns filters out any columns that already exists
+     We are assuming that adding columns filters out any columns that already exists
+
+    @param df:
+    @type df:
+    @param new_columns_mapping_dict:
+    @type new_columns_mapping_dict:
+    @return:
+    @rtype:
     """
     return _add_columns(df, new_columns_mapping_dict, False)
 
 
 def add_columns_strict(df: DataFrame, new_columns_mapping_dict: dict) -> DataFrame:
     """
-    We are assuming that adding columns filters out any columns that already exists
+     We are assuming that adding columns filters out any columns that already exists
+    @param df:
+    @type df:
+    @param new_columns_mapping_dict:
+    @type new_columns_mapping_dict:
+    @return:
+    @rtype:
     """
     return _add_columns(df, new_columns_mapping_dict, True)
 
 
 def add_column(df: DataFrame, new_column: str, transform):
     """
-    NH: added here for coverage. But will be rarely used
-    :param df:
-    :param new_column:
-    :param transform:
-    :return:
+    NH: added here for coverage. But it will rarely be  used
+    @param df:
+    @type df:
+    @param new_column:
+    @type new_column:
+    @param transform:
+    @type transform:
+    @return:
+    @rtype:
     """
-
     # Assuming all columns are correct... But we better add a check step similar to the drop columns function
     return df.withColumn(new_column, transform)
 
@@ -696,6 +893,24 @@ def gen_pivot_sql(df: DataFrame, pivoted_columns_list: list = [None]
                   , value_column: str = 'value'
                   , fn: str = "max"
                   , hive_view: str = None) -> str:
+    """
+    generates the sql string corresponding to the sql pivot functions
+
+    @param df:
+    @type df:
+    @param pivoted_columns_list:
+    @type pivoted_columns_list:
+    @param key_column:
+    @type key_column:
+    @param value_column:
+    @type value_column:
+    @param fn:
+    @type fn:
+    @param hive_view:
+    @type hive_view:
+    @return:
+    @rtype:
+    """
     pivot_columns = []
     if len(pivoted_columns_list) != 0:
         pivot_columns = pivoted_columns_list
@@ -726,6 +941,23 @@ def _pivot(df: DataFrame, pivoted_columns_list: list = [None]
            , value_column: str = 'value'
            , fn: str = "max"
            , hive_view: str = None) -> DataFrame:
+    """
+
+    @param df:
+    @type df:
+    @param pivoted_columns_list:
+    @type pivoted_columns_list:
+    @param key_column:
+    @type key_column:
+    @param value_column:
+    @type value_column:
+    @param fn:
+    @type fn:
+    @param hive_view:
+    @type hive_view:
+    @return:
+    @rtype:
+    """
     q = gen_pivot_sql(df, pivoted_columns_list, key_column, value_column, fn, hive_view)
     if hive_view is None:
         return spark.sql(q)
@@ -737,6 +969,15 @@ def _pivot(df: DataFrame, pivoted_columns_list: list = [None]
 
 
 def pivot(df: DataFrame, params_dict: dict = {}) -> DataFrame:
+    """
+
+    @param df:
+    @type df:
+    @param params_dict:
+    @type params_dict:
+    @return:
+    @rtype:
+    """
     if params_dict is None:
         return _pivot(df, [])
     key_column = params_dict.get("key_column", 'key_column')
@@ -750,10 +991,14 @@ def pivot(df: DataFrame, params_dict: dict = {}) -> DataFrame:
 def filter_op(df: DataFrame, filter_expr_list: list = ["1=1"], operation: str = 'AND') -> DataFrame:
     """
     applies a composition of boolean expressions that are either ORed or ANDed together
-    :param df:
-    :param filter_expr_list: list of filter expressions that return boolean and stitched with the operation (AND or OR)
-    :param operation: default to AND
-    :return: dataframe filtered down based on the filters
+    @param df:
+    @type df:
+    @param filter_expr_list: list of filter expressions that return boolean and stitched with the operation (AND or OR)
+    @type filter_expr_list:
+    @param operation: default to AND
+    @type operation:
+    @return: dataframe filtered by row based on the filters
+    @rtype:
     """
     operation_wrapper = f") {operation} ("
     query_filter = f"({operation_wrapper.join(map(str, filter_expr_list))})"
@@ -763,9 +1008,12 @@ def filter_op(df: DataFrame, filter_expr_list: list = ["1=1"], operation: str = 
 def filter_and(df: DataFrame, filter_expr_list: list = ["1=1"]) -> DataFrame:
     """
     applies the AND of filter expressions
-    :param df:
-    :param filter_expr_list: list of filter expressions that return a boolean ANDed together
-    :return: dataframe filtered down based on the filters
+    @param df:
+    @type df:
+    @param filter_expr_list: list of filter expressions that return a boolean ANDed together
+    @type filter_expr_list:
+    @return: dataframe filtered down based on the filters
+    @rtype:
     """
     return filter_op(df, filter_expr_list)
 
@@ -773,18 +1021,23 @@ def filter_and(df: DataFrame, filter_expr_list: list = ["1=1"]) -> DataFrame:
 def filter_or(df: DataFrame, filter_expr_list: list = ["1=1"]) -> DataFrame:
     """
     applies a union of boolean filter expressions
-    :param df:
-    :param filter_expr_list: list of filter expressions that return boolean Union-ed together
-    :return: dataframe filtered down based on the filters
+    @param df:
+    @type df:
+    @param filter_expr_list: list of filter expressions that return a boolean ANDed together
+    @type filter_expr_list:
+    @return: dataframe filtered down based on the filters
+    @rtype:
     """
     return filter_op(df, filter_expr_list, 'OR')
 
 
 def gen_df_column_list(df):
     """
-    not used for now
-    :param df:
-    :return:
+    NH: not used for now
+    @param df:
+    @type df:
+    @return:
+    @rtype:
     """
     return df.schema.fieldNames()
 
@@ -794,14 +1047,21 @@ def look_up(df: DataFrame, lookup_df: DataFrame, ref_index: int,
             new_column: str,
             lookup_type: str = "value") -> DataFrame:
     """
-    # we should have a key for ref instead of index
-    :param df:
-    :param lookup_df:
-    :param ref_index:
-    :param reference_column:
-    :param new_column:
-    :param lookup_type:
-    :return:
+    # NH: note we should have a key for ref instead of index
+    @param df:
+    @type df:
+    @param lookup_df:
+    @type lookup_df:
+    @param ref_index:
+    @type ref_index:
+    @param reference_column:
+    @type reference_column:
+    @param new_column:
+    @type new_column:
+    @param lookup_type:
+    @type lookup_type:
+    @return:
+    @rtype:
     """
 
     filtered_lookup_df = lookup_df.filter(f"step={ref_index}").select("x", "y")
@@ -827,15 +1087,19 @@ def look_up(df: DataFrame, lookup_df: DataFrame, ref_index: int,
         return df
 
 
-# needs work as this is really 2 dataframes
 def add_columns_lookup(df: DataFrame, mapping_dict: dict):
     """
+    # needs work as this is really 2 dataframes
     Note todo the lookup file path should be configuration-based?
     otherwise we need it as an independent parameter as it does not make sense to read it for every new column
     as we do not see the case for independent lookup tables
-    :param df:
-    :param mapping_dict:
-    :return:
+
+    @param df:
+    @type df:
+    @param mapping_dict:
+    @type mapping_dict:
+    @return:
+    @rtype:
     """
     res_df = df
     for c in mapping_dict:
@@ -854,7 +1118,7 @@ def add_columns_lookup(df: DataFrame, mapping_dict: dict):
 def _test():
     """
     test code
-    :return:
+    @return:
     """
     #import pystitchr.base.tests.test_df_transforms
     #import pystitchr.base.df_transforms

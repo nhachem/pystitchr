@@ -1,7 +1,7 @@
 """
 pyspark
 
-from stitchr_extensions.df_transforms import *
+from pystitchr.df_transforms import *
 
 """
 
@@ -31,7 +31,7 @@ import os
 import sys
 import json
 
-from typing import List
+from typing import List, Optional
 
 spark = (pyspark.sql.SparkSession.builder.getOrCreate())
 spark.sparkContext.setLogLevel('WARN')
@@ -62,7 +62,7 @@ def match_string_length(s: str, length: int) -> str:
     if len(s) == length:
         return s
     else:
-        return None
+        return str(None)
 
 
 spark.udf.register("match_string_length", match_string_length)
@@ -93,13 +93,12 @@ def _dict_to_scala_map(sc, jm):
     return sc._jvm.PythonUtils.toScalaMap(jm)
 
 
-def transform0(self, f):
+def transform0(self, func):
     """
     pyspark does not have a transform before version 3... we need to add one to DataFrame.
     This is based on https://mungingdata.com/pyspark/chaining-dataframe-transformations/
     """
-    return f(self)
-
+    return func(self)
 
 
 def _test():

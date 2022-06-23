@@ -4,7 +4,7 @@ On single-node emr after setting wheel and installing pystitchr
 pyspark
 import pipelineRuns
 or
-python demoPipelineRun.py
+python demoPipelineRun_v0_3.py
 
 demo pipeline runs for transformations
 
@@ -47,52 +47,44 @@ test_df.printSchema()
 # rename_4_parquet is a wrapper with dummy params for rename_4_parquet... should be able to do better
 
 random_pivot_table = get_random_string(10)
-pipeline_spec = {1: {'add_columns': {"module": "pystitchr",
-                                     "params": {'BARCODE': 'get_random_alphanumeric(8, ceil(f3*1000))',
-                                                'WELL_NUMBER': 'ceil(f2*100)',
-                                                'PLATE_ID': 'get_random_alphanumeric(8, ceil(f4*1000))',
-                                                'EXPERIMENT_ID': 'get_random_alphanumeric(15, ceil(f6*1000))'
-                                                }
+pipeline_spec = {1: {'add_columns': {'BARCODE': 'get_random_alphanumeric(8, ceil(f3*1000))',
+                                     'WELL_NUMBER': 'ceil(f2*100)',
+                                     'PLATE_ID': 'get_random_alphanumeric(8, ceil(f4*1000))',
+                                     'EXPERIMENT_ID': 'get_random_alphanumeric(15, ceil(f6*1000))'
                                      }
                      },
-                 2: {"rename_columns": {"module": "pystitchr",
-                                        "params": {"f1": "foo", "f2": "bar", 'f6': "not-a-parquet(),{name}"}}},
-                 3: {'rename_4_parquet': {"module": "pystitchr", "params": []}},
-                 4: {"drop_columns": {"module": "pystitchr", "params": ["f3", "f4", "f7", "f8", "f9"]}},
-                 5: {"flatten": {"module": "pystitchr", "params": []}},
+                 2: {"rename_columns": {"f1": "foo", "f2": "bar", 'f6': "not-a-parquet(),{name}"}},
+                 3: {'rename_4_parquet': []},
+                 4: {"drop_columns": ["f3", "f4", "f7", "f8", "f9"]},
+                 5: {"flatten": []},
                  # output from unpivot generates a key_column and a value column.
                  # 6: {"unpivot": {"keys": ['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID', 'address__city',
                  #                         'not__a__parquet________name__'],
                  #                "unpivot_columns": ["foo", "bar", "f5"]
                  #                }},
-                 6: {"unpivot": {"module": "pystitchr",
-                                 "params": {"keys": ['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID',
-                                            'address__city', 'not__a__parquet________name__'],
-                                            "unpivot_columns": ["foo", "bar", "f5"],
-                                            "key_column": "key_column", "value_column": "value"
-                                            }
+                 6: {"unpivot": {"keys": ['BARCODE', 'WELL_NUMBER', 'PLATE_ID', 'EXPERIMENT_ID',
+                                          'address__city', 'not__a__parquet________name__'],
+                                 "unpivot_columns": ["foo", "bar", "f5"],
+                                 "key_column": "key_column", "value_column": "value"
                                  }},
                  # pivot defaults to processing a key_column, value column-pair.
                  # But we can specify alternates with the params dict
                  # 7: {"pivot": {}},
-                 7: {"pivot": {"module": "pystitchr", "params": {"hive_view": f"test_{random_pivot_table}"}}},
+                 7: {"pivot": {"hive_view": f"test_{random_pivot_table}"}},
                  # 7: {"pivot": {"pivoted_values": ["foo", "f5"]}},
                  # 7: {"pivot": {"pivot_values": ["foo", "f5"],
                  #              "key_column": "key_column", "value_column": "value"}},
-                 8: {'select_list': {"module": "pystitchr",
-                                     "params": ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__',
-                                                'f5', 'foo']}},
-                 9: {'select_exclude': {"module": "pystitchr", "params":['f5']}},
-                 10: {'filter_and': {"module": "pystitchr", "params": ['WELL_NUMBER >= 20', 'WELL_NUMBER <= 30']}},
+                 8: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__',
+                                     'f5', 'foo']},
+                 9: {'select_exclude': ['f5']},
+                 10: {'filter_and': ['WELL_NUMBER >= 20', 'WELL_NUMBER <= 30']},
                  # 11: {'filter_or': ['WELL_NUMBER in ( 20, 30)']},
-                 11: {'filter_or': {"module": "pystitchr", "params": ['WELL_NUMBER = 20', 'WELL_NUMBER = 30']}},
-                 12: {'select_list': {"module": "pystitchr",
-                                      "params": ['PLATE_ID', 'WELL_NUMBER', 'BARCODE',
-                                                 'not__a__parquet________name__', 'foo']}},
+                 11: {'filter_or': ['WELL_NUMBER = 20', 'WELL_NUMBER = 30']},
+                 12: {'select_list': ['PLATE_ID', 'WELL_NUMBER', 'BARCODE', 'not__a__parquet________name__', 'foo']},
                  }
 
 df1 = test_df
-df_out = df1.run_pipeline(pipeline_spec, logging_level)
+df_out = df1.run_pipeline_v0_3(pipeline_spec, logging_level)
 # this would default to ERROR which means no logging
 # df_out = dft.run_pipeline(df1, pipeline_spec)
 df_out.printSchema()

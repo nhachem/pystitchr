@@ -1,6 +1,9 @@
-{ "1": {"rename_columns": {"key": "k", "string_value": "s_val"
-                        }
+{ "1": {"rename_columns": {"module": "pystitchr",
+                        "params": {"key": "k", "string_value": "s_val"
+                        }}
     },
-  "2": {"drop_columns": ["int_value"]},
-  "3": {"select_list": ["k", "float_value"]}
+  "2": {"drop_columns": {"module": "pystitchr",
+                        "params": ["int_value"]}},
+  "3": {"select_list": {"module": "pystitchr",
+                        "params": ["k", "float_value"]}}
 }

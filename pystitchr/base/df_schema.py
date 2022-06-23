@@ -104,10 +104,14 @@ Need to add a catch all StringType() to the map
 def generate_schema_by_string(domain: str, columns: list, attributes_df: DataFrame):
     """
     using call by string name getattr()
-    :param domain:
-    :param columns:
-    :param attributes_df:
-    :return:
+    @param domain:
+    @type domain:
+    @param columns:
+    @type columns:
+    @param attributes_df:
+    @type attributes_df:
+    @return:
+    @rtype:
     """
     col_df = spark.createDataFrame(columns, StringType())
     column_meta_df = attributes_df \
@@ -131,10 +135,14 @@ def generate_schema_by_string(domain: str, columns: list, attributes_df: DataFra
 def generate_missing_columns(domain: str, columns: list, attributes_df: DataFrame) -> list:
     """
     generate add on columns type casted
-    :param domain:
-    :param columns:
-    :param attributes_df:
-    :return:
+    @param domain:
+    @type domain:
+    @param columns:
+    @type columns:
+    @param attributes_df:
+    @type attributes_df:
+    @return:
+    @rtype:
     """
     col_df = spark.createDataFrame(columns, StringType())
     # col_df.show(50)
@@ -154,10 +162,14 @@ def generate_missing_columns(domain: str, columns: list, attributes_df: DataFram
 
 def generate_ordered_column_list(domain: str, attributes_df: DataFrame) -> list:
     """
-    This function gets a list of columns by position directly returned from a schema defintion structure (here in the attributes_df)
-    :param domain: filter on the attributes (i.e table)
-    :param attributes_df: has at least column name (variable_name) and postion (sequence)
-    :return:
+    This function gets a list of columns by position directly returned from a schema definition structure
+    (here in attributes_df)
+    @param domain:
+    @type domain:
+    @param attributes_df:
+    @type attributes_df:
+    @return:
+    @rtype:
     """
     row_list = attributes_df \
         .filter(f"domain_prefix = '{domain}'") \
@@ -168,20 +180,30 @@ def generate_ordered_column_list(domain: str, attributes_df: DataFrame) -> list:
 
 
 def get_schema(df: DataFrame) -> DataFrame:
+    """
+    returns the schema as a DataFrame
+    @param df:
+    @type df:
+    @return:
+    @rtype:
+    """
     _df = spark.read.json(sc.parallelize([df.schema.json()]))
     return _df.withColumn("field", explode("fields")).drop("fields").select("field.*")
 
 
 def left_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:
     """
-
-    :param left_df:
-    :param right_df:
-    :return:
+    takes 2 dataframes (left and right) and
+    returns a list of columns in left DataFrame set but not in the right DataFrame
+    @param left_df:
+    @type left_df:
+    @param right_df:
+    @type right_df:
+    @return:
+    @rtype:
     """
     left_columns_set = set(left_df.schema.fieldNames())
     right_columns_set = set(right_df.schema.fieldNames())
-    # what is the toSet on python? .toSet
     # print(list(df_columns_set))
     # warn that some columns are not in the list... Or maybe throw an error?
     return list(left_columns_set - right_columns_set)
@@ -189,14 +211,17 @@ def left_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:
 
 def right_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:
     """
-
-    :param left_df:
-    :param right_df:
-    :return:
+    takes 2 dataframes (left and right) and
+    returns a list of columns in right DataFrame  but not in the left DataFrame
+    @param left_df:
+    @type left_df:
+    @param right_df:
+    @type right_df:
+    @return:
+    @rtype:
     """
     left_columns_set = set(left_df.schema.names)
     right_columns_set = set(right_df.schema.names)
-    # what is the toSet on python? .toSet
     # print(list(df_columns_set))
     # warn that some columns are not in the list... Or maybe throw an error?
     return list(right_columns_set - left_columns_set)
@@ -206,10 +231,13 @@ def right_diff_schemas(left_df: DataFrame, right_df: DataFrame) -> list:
 # look into panda equivalent or maybe qoalas
 def schema_diff(left_df: DataFrame, right_df: DataFrame):
     """
-
-    :param left_df:
-    :param right_df:
-    :return:
+    returns the left and right schema difference
+    @param left_df:
+    @type left_df:
+    @param right_df:
+    @type right_df:
+    @return:
+    @rtype:
     """
     right_columns_set = set(right_df.schema)
     left_columns_set = set(left_df.schema)
@@ -221,11 +249,15 @@ def schema_diff(left_df: DataFrame, right_df: DataFrame):
 # to add to pystitchr
 def fields_diff(left_df: DataFrame, right_df: DataFrame):
     """
-
-    :param left_df:
-    :param right_df:
-    :return:
+    difference of field names (similar to schema_diff but only on names)
+    @param left_df:
+    @type left_df:
+    @param right_df:
+    @type right_df:
+    @return:
+    @rtype:
     """
+
     l_set = set(left_df.schema.fieldNames())
     r_set = set(right_df.schema.fieldNames())
     return l_set.difference(r_set), r_set.difference(l_set)
