@@ -301,8 +301,7 @@ def select_list(df: DataFrame, column_list: list, strict: bool = True) -> DataFr
         return generate_error_df("select_list",
                                  f"App Error: columns to select {not_in_schema} are not in the dataframe schema")
     in_schema = _in_schema(df, column_list)
-    cl: list = f"`{'`,`'.join(in_schema)}`".split(',')
-    return df.select(*cl)
+    return df.select(in_schema)
 
 
 def select_list_from(df: DataFrame, column_list: list) -> DataFrame:
