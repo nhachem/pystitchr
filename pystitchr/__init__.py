@@ -16,11 +16,12 @@
 #
 
 # monkey patching
-from .engine import *
+from run_pipeline import *
 from .base.df_transforms import *
 from .base.df_checks import *
 from .base.df_data_quality import *
 
+from pystitchr.util.spark_utils import transform0
 import pystitchr.base.df_transforms as dft
 import pystitchr.base.df_functions as fn
 import pystitchr.base.df_checks as chck
@@ -60,7 +61,6 @@ DataFrame.domain_check = domain_check
 DataFrame.add_dup_flag = add_dup_flag
 
 # engine.run_pipeline
-DataFrame.run_pipeline = engine.run_pipeline
-# deprecated after v0.3
-DataFrame.run_pipeline_v0_3 = engine.run_pipeline_v0_3
-DataFrame.transform0 = engine.transform0
+DataFrame.run_pipeline = run_pipeline
+
+DataFrame.transform0 = transform0

@@ -8,6 +8,7 @@ from pystitchr.df_checks import *
 import json
 from random import choice
 from string import ascii_letters
+from time import perf_counter
 
 import pyspark
 from pyspark.sql.dataframe import DataFrame
@@ -17,12 +18,29 @@ from pyspark.sql.dataframe import DataFrame
 # from typing import Tuple
 
 spark = pyspark.sql.SparkSession.builder.getOrCreate()
+
+
 # spark.sparkContext.setLogLevel('WARN')
 
 # useful utility functions
 
+def time_it(func):
+    """
+    wrapper to compute execution time. can be used as a decorator
+    """
+    def time_wrap_func(*args, **kwargs):
+        tic = perf_counter()
+        result = func(*args, **kwargs)
+        toc = perf_counter()
+        elapsed_time = toc - tic
 
-def read_csv_file(file_path: str, inferSchema = False) -> DataFrame:
+        print(f"Function {func.__name__!r} executed in {elapsed_time:.4f}s")
+        return result
+
+    return time_wrap_func
+
+
+def read_csv_file(file_path: str, inferSchema=False) -> DataFrame:
     return spark \
         .read \
         .format("csv") \
@@ -44,7 +62,7 @@ def read_csv_file_with_schema(file_path: str, schema) -> DataFrame:
 def load_json_file(file_path: str) -> dict:
     import json
     # Opening JSON file
-    f = open(file_path,)
+    f = open(file_path, )
     # returns JSON object as a dictionary
     data = json.load(f)
     # Closing file after loading

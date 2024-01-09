@@ -48,11 +48,12 @@ df1 = test_df
 
 # df_out = dft.run_pipeline(df1, pipeline_spec, logging_level)
 df_out = df1.run_pipeline(pipeline_spec, logging_level)
-# this would default to ERROR which means no logging
-# df_out = dft.run_pipeline(df1, pipeline_spec)
-# df_out.show(20, False)
+df_out.printSchema()
+df_out.show(20, False)
 
 t_start = time.perf_counter()
 df_out.write.format('csv').option('header', True).mode('overwrite').save(f"{data_dir}/testPipeline.csv")
 print(f"runtime is {round(time.perf_counter() - t_start, 2)}")
 
+# checking the pivoted view
+# spark.sql(f"select * from test_random_pivot_table").show()

@@ -5,7 +5,7 @@ export USER_ROOT=$HOME
 export USER_PERSIST_ROOT=$USER_ROOT/data
 ## run it from the root code directory
 export ROOT_DIR=`pwd`
-export VERSION=0.4
+export VERSION=1.0
 ## PYTHON SOURCES assumes that the root is root of src code
 export PYTHONPATH=$PYTHONPATH:$ROOT_DIR:$ROOT_DIR/pystitchr
 # export PYTHONPATH=$PYTHONPATH:`pwd`

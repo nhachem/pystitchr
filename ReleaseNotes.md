@@ -1,13 +1,18 @@
  # PyStitchr: (Data)Stitchr (Python Version)
 
-## Release 0.3
+## Release 1
 
 ### Major changes 
-* started adding support for data quality functions
-* many extensions to transform functions
-
+* refactoring run_pipeline and changed the way transforms are specified. See the new version of demoPipelineRun
+    * invocation now accepts **params as well as parameter list as a dict
+  ``` 
+  df_p = (
+            df_p.transform(lambda df: method_to_call(df, params))
+            if isinstance(params, list)
+            else df_p.transform(method_to_call, **params)
+        )
+  ```
 ### Shortcomings
-* logging is not well-tested
 * need more unit tests to cover the df_transform dynamic_module
 * documentations of API is very light
 
