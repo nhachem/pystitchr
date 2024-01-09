@@ -44,7 +44,7 @@
     },
     {
         "function": "pivot",
-        "params": {"params_dict": {"hive_view": "test_random_pivot_table"}}
+        "params": {"params_dict": {}}
      },
     {
         "function": "select_list",
