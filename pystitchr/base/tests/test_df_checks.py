@@ -1,11 +1,10 @@
 """
-pystitchr tests
+df_checks tests
 
 """
 import unittest
-from resources import data
-from pyspark.sql.functions import when
-from pystitchr.base.df_columns import *
+
+import xmlrunner
 
 
 class TestCheckMethods(unittest.TestCase):
@@ -23,6 +22,5 @@ class TestCheckMethods(unittest.TestCase):
     """
 
 
-if __name__ == '__main__':
-    unittest.main()
-
+if __name__ == "__main__":
+    unittest.main(testRunner=xmlrunner.XMLTestRunner(output="test-reports"))

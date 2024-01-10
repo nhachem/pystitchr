@@ -16,7 +16,7 @@
 #
 
 # monkey patching
-from run_pipeline import *
+from .run_pipeline import *
 from .base.df_transforms import *
 from .base.df_checks import *
 from .base.df_data_quality import *
@@ -42,7 +42,7 @@ DataFrame.flatten_no_explode = flatten_no_explode
 DataFrame.rename_4_parquet = rename_4_parquet
 DataFrame.select_list = select_list
 DataFrame.select_exclude = select_exclude
-
+DataFrame.translate_column_values = translate_column_values
 # schema related
 DataFrame.get_schema = get_schema
 

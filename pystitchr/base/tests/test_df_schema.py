@@ -1,11 +1,14 @@
 """
-stitchr_extensions tests
+schema tests
 
 """
 import unittest
-from resources import data
+
+import xmlrunner
 from pyspark.sql.functions import when
+
 from pystitchr.base.df_columns import *
+from resources import data
 
 
 class TestSchemaMethods(unittest.TestCase):
@@ -23,6 +26,5 @@ class TestSchemaMethods(unittest.TestCase):
     """
 
 
-if __name__ == '__main__':
-    unittest.main()
-
+if __name__ == "__main__":
+    unittest.main(testRunner=xmlrunner.XMLTestRunner(output="test-reports"))

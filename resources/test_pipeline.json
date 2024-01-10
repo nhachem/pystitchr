@@ -1,9 +1,17 @@
-{ "1": {"rename_columns": {"module": "pystitchr",
-                        "params": {"key": "k", "string_value": "s_val"
-                        }}
-    },
-  "2": {"drop_columns": {"module": "pystitchr",
-                        "params": ["int_value"]}},
-  "3": {"select_list": {"module": "pystitchr",
-                        "params": ["k", "float_value"]}}
-}
+[
+  {
+    "function": "rename_columns",
+    "params": {
+      "rename_mapping_dict": {
+                "key": "key_value"
+            }
+      }
+  },
+  {
+    "function": "drop_columns",
+    "params": ["int_value"]
+  },
+  { "function": "select_list",
+    "params": ["key_value", "float_value"]
+  }
+]

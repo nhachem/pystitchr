@@ -1087,6 +1087,49 @@ def look_up(df: DataFrame, lookup_df: DataFrame, ref_index: int,
         return df
 
 
+def translate_column_values(
+    df: DataFrame,
+    translation_df: DataFrame,
+    source_fk_column: str,
+    lookup_column: str,
+    translation_column: str,
+    join_type: str = "leftouter",
+) -> DataFrame:
+    """
+    replaces the source_fk_column values with the ones from a translation_column based on a "join/lookup" column.
+    It is expected that the translation_df has only 2 columns (lookup_column and translation_column).
+    We assert that by selecting only the needed columns prior to the join-lookup
+    """
+    translation_df = translation_df.select(lookup_column, translation_column)
+    return (
+        df.join(translation_df, df[source_fk_column] == translation_df[lookup_column], join_type)
+        .withColumn(source_fk_column, col(translation_column))
+        .drop(lookup_column)
+        .drop(translation_column)
+    )
+
+
+def union_by_name(empty_df: DataFrame, tables_for_union: list, verbose: bool = False) -> DataFrame:
+    """
+    Makes a union by name allowing missing columns one by one from a list of tables_for_union
+
+    Args:
+        empty_df: expect an empty df to start the union
+        tables_for_union: full names of tables, e.g.: ["cc_raw_stage.sfdc_provider", "cc_raw_stage.hco_provider"]
+        verbose: prints table name with the line counts
+
+    Returns:
+        dataframe that comprises all tables from tables_for_union
+    """
+    df = empty_df
+    for table_name in tables_for_union:
+        table = spark.table(table_name)
+        if verbose:
+            print(f"{table_name:<50}\t{table.count():>10_}")
+        df = df.unionByName(table, allowMissingColumns=True)
+    return df
+
+
 def add_columns_lookup(df: DataFrame, mapping_dict: dict):
     """
     # needs work as this is really 2 dataframes
@@ -1113,6 +1156,18 @@ def add_columns_lookup(df: DataFrame, mapping_dict: dict):
         else:
             res_df = look_up(res_df, l_df, ref_index, ref_column, c, params[3])
     return res_df
+
+
+def add_column_values_hash(df: DataFrame, exclude_columns: list = None) -> DataFrame:
+    """add a hash column out of all column values to detect changes on merge by the hash value"""
+    columns = sorted(df.columns.copy())  # preserve the order of columns to keep the hash value permutation independent
+    if not exclude_columns:
+        exclude_columns = list()
+    compute_expressions = [
+        f"if({field} is null, '''', cast({field} as string))" for field in columns if field not in exclude_columns
+    ]
+
+    return df.add_columns({"column_values_hash": f"md5(concat({','.join(compute_expressions)}))"})
 
 
 def _test():
