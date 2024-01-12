@@ -32,7 +32,7 @@ You can build the basic docs by running `./bash/gen_docs.sh` from the top direct
     python setup.py bdist_wheel
     ```
     This step is needed once for a new build environment. You can then deploy the dist/*.whl, for example to install locally
-```python -m pip install dist/pystitchr-0.1-py2.py3-none-any.whl```
+```python -m pip install dist/pystitchr-<version>-py36-none-any.whl```
 
   and to uninstall
 ```pip uninstall pystitchr```
@@ -64,7 +64,7 @@ python demoPipelineRunFromFile.py
 * Pending Features and Fixes
     
     * Porting from the scala code to python
-    * adding logging and cleanup code to release 0.1
+    * adding multi dataframesas input (sql like constructs)
     
 ### Send requests/comments  to ###
     
