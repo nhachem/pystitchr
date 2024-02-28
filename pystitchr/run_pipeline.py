@@ -1,11 +1,10 @@
 from pprint import pprint
-
 from pyspark.sql import DataFrame
 
-# from cctk.util.cc_logging import LoggerSingleton, put_log
+# from pystitchr.util.stitchr_logging import LoggerSingleton, put_log
+# from pystitchr.util.simple_logging import log
+# NH logging still under development
 import logging
-from pystitchr.util.simple_logging import log
-
 
 def run_pipeline(input_df: DataFrame, pipeline: list, logging_level: str = "ERROR") -> DataFrame:
     """
@@ -26,8 +25,7 @@ def run_pipeline(input_df: DataFrame, pipeline: list, logging_level: str = "ERRO
     for example
     pipeline = [
                 {"function": "validate_foreign_key", "params": {"entity": entity, "trap_data": True}},
-               ...
-                ]
+               ...]
 
     @param input_df:
     @type input_df: DataFrame (table)
@@ -45,10 +43,6 @@ def run_pipeline(input_df: DataFrame, pipeline: list, logging_level: str = "ERRO
     # ToDo: control logging level globally from outside
     logging.basicConfig(level=logging_level)
     logger = logging.getLogger("logging")
-
-    # ToDo: control logging level globally from outside
-    # logging.basicConfig(level=logging_level)
-    # log = logging.getLogger("logging")
 
     df_p = input_df
     steps = pipeline

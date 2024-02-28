@@ -24,6 +24,20 @@ spark = pyspark.sql.SparkSession.builder.getOrCreate()
 
 # useful utility functions
 
+def replace_brackets(text: str, bracket_symbol: str = '{}') -> str:
+    """
+    simple replace the bracketing characters. assumes there are 2 characters
+    note it will replace also { }} which may not be what you want
+    @param text:
+    @type text:
+    @param bracket_symbol:
+    @type bracket_symbol:
+    @return:
+    @rtype:
+    """
+    return text.replace(bracket_symbol[0], '').replace(bracket_symbol[1], '')
+
+
 def time_it(func):
     """
     wrapper to compute execution time. can be used as a decorator

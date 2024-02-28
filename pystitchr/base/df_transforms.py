@@ -6,8 +6,6 @@ from pystitchr.base.df_transforms import *
 """
 
 # import os
-# from pyspark.sql.functions import concat_ws, collect_list
-# import typing
 
 import re
 # import sys
@@ -16,7 +14,7 @@ from typing import List
 import pyspark
 import pyspark.sql.functions as F
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col, concat, lit, when, explode
+from pyspark.sql.functions import col, concat, lit, when, explode, from_json, to_json, md5
 # , posexplode, arrays_zip
 from pyspark.sql.types import *
 from pyspark.sql.window import Window
@@ -262,6 +260,22 @@ def fields_diff(left_df: DataFrame, right_df: DataFrame):
     return l_set.difference(r_set), r_set.difference(l_set)
 
 
+def noop(df: DataFrame, f: dict) -> DataFrame:
+    # for some reason I needed a parameter... this needs debugging
+    return df
+
+
+def add_hash_value(
+    df: DataFrame,
+    value_column: str = 'message_value') -> DataFrame:
+    '''
+    This is generic enough but is used to adjust the extraction views to add  a row_hash value
+    '''
+    _df = df
+    # NH: TODO we could use directly the value as we have a string value in place
+    return _df.withColumn("_hashValue", md5(to_json(value_column)))
+
+
 def _select_list(df: DataFrame, column_list: list) -> DataFrame:
     """
     strictly restrictive select list of columns. if any columns in column_list are not in schema it throws an error
@@ -281,6 +295,21 @@ def _select_list(df: DataFrame, column_list: list) -> DataFrame:
                                  f"App Error: columns to select {not_in_schema} are not in the dataframe schema")
     cl: list = f"`{'`,`'.join(column_list)}`".split(',')
     return df.select(*cl)
+
+
+def select_expr_columns(
+    df: DataFrame,
+    expression_list: list
+    ) -> DataFrame:
+    """
+    expression_list is of the form [{"new_column": <col_name>, "expression": "<sql column expression>"}, ...]
+        --> maps to expression as new_column
+    is  useful to write inline udf transforms on columns and perform a one step select that are supported by UDFs
+    """
+    expr = [f"{exp['transform']} as {exp['new_column']}" for exp in expression_list]
+    # expr.append("*")
+
+    return df.selectExpr(*expr)
 
 
 def select_list(df: DataFrame, column_list: list, strict: bool = True) -> DataFrame:
@@ -1168,6 +1197,27 @@ def add_column_values_hash(df: DataFrame, exclude_columns: list = None) -> DataF
     ]
 
     return df.add_columns({"column_values_hash": f"md5(concat({','.join(compute_expressions)}))"})
+
+
+def cast2json(
+        df: DataFrame,
+        column_name: str,
+        new_column: str = None,
+        db_schema: StructType = None) -> DataFrame:
+    """
+    takes a dataframe and parses the column_name into new_column or replaces it
+    by its equivalent Struct if new_column is None.
+    Note that providing the schema as input makes it much faster else the code parses every string
+    in the column_name to assemble the covering schema
+    Note: do not use in a streaming DF. Use it after the streaming step
+    """
+    out_column = column_name if new_column is None else new_column
+    if db_schema is None:
+        _schema = spark.read.json(df.select(column_name).rdd.map(lambda row: row[column_name])).schema
+    else:
+        _schema = db_schema
+
+    return df.withColumn(out_column, from_json(col(column_name), _schema))
 
 
 def _test():

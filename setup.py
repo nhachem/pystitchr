@@ -11,7 +11,7 @@ long_description = 'this is a package of pyspark dataframe transformations, ' \
     
 setup(
     name="pystitchr",
-    version="1.0",
+    version="1.1",
     description='Stitchr Python API',
     long_description=long_description,# long_description,
     long_description_content_type="text/markdown",

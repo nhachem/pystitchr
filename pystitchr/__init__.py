@@ -27,6 +27,8 @@ import pystitchr.base.df_functions as fn
 import pystitchr.base.df_checks as chck
 
 # Transforms
+DataFrame.noop = noop
+DataFrame.add_hash_value = add_hash_value
 DataFrame.rename_columns = rename_columns
 DataFrame.add_windowed_column = add_windowed_column
 DataFrame.add_columns = add_columns
@@ -43,6 +45,8 @@ DataFrame.rename_4_parquet = rename_4_parquet
 DataFrame.select_list = select_list
 DataFrame.select_exclude = select_exclude
 DataFrame.translate_column_values = translate_column_values
+DataFrame.cast2json = cast2json
+DataFrame.select_expr_columns = select_expr_columns
 # schema related
 DataFrame.get_schema = get_schema
 
